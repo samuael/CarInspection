@@ -10,4 +10,17 @@ const (
 	InvalidUsernameORPassword= " Invalid Username or Password "
 	// SuccesfulyLoggedIn ... 
 	SuccesfulyLoggedIn =" Succesfuly Logged In "
+	
+
+
+	// This constant values listed below are roles of the system
+	// those who directly interact with the system .
+	
+	// ADMIN ...
+	ADMIN="admin"
+	// SECRETARY ...
+	SECRETARY="secretary"
+	// INSPECTOR ...
+	INSPECTOR="inspector"
+	
 )

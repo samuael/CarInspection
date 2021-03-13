@@ -8,6 +8,7 @@ import (
 	"github.com/gchaincl/dotsql"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
 	"github.com/samuael/Project/CarInspection/pkg/storage/sql_db"
+	"github.com/samuael/Project/CarInspection/platforms/hash"
 	"github.com/subosito/gotenv"
 )
 
@@ -19,7 +20,16 @@ var once sync.Once
 var conn *sql.DB
 var connError error
 
-func main() {
+func main(){
+	hashes , er := hash.HashPassword("asmin")
+	if er != nil {
+		print("Error")
+	}else {
+		print(hashes)
+	}
+}
+
+func maino() {
 	once.Do(func() {
 		conn, connError = sql_db.NewStorage(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("CAR_INSPECTION_DB_NAME"))
 		if connError != nil {

@@ -7,6 +7,8 @@ import (
 
 	"github.com/jackc/pgx"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest"
+	"github.com/samuael/Project/CarInspection/pkg/http/rest/auth"
+	"github.com/samuael/Project/CarInspection/pkg/http/rest/middleware"
 	"github.com/samuael/Project/CarInspection/pkg/login"
 	pgxstorage "github.com/samuael/Project/CarInspection/pkg/storage/pgx_storage"
 	"github.com/subosito/gotenv"
@@ -29,9 +31,12 @@ func main(){
 	})
 	defer conn.Close(context.Background())
 
+	authenticator := auth.NewAuthenticator()
+	rules := middleware.NewRules(authenticator)
+
 	adminrepo := pgxstorage.NewAdminRepo(conn)
 	loginservice := login.NewService(adminrepo)
-	adminhandler := rest.NewAdminHandler(loginservice)
-	rest.Route(adminhandler)
+	adminhandler := rest.NewAdminHandler(authenticator ,loginservice)
+	rest.Route(rules , adminhandler)
 
 }

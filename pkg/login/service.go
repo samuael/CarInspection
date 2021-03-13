@@ -9,12 +9,12 @@ import (
 
 // Service ...
 type Service interface {
-	AdminLogin( ctx context.Context ) ( *model.Admin ,  error ) 
+	AdminByEmail( ctx context.Context ) ( *model.Admin ,  error ) 
 }
 
 // Repository ...
 type Repository interface {
-	AdminLogin( ctx context.Context ) ( *model.Admin ,  error ) 
+	AdminByEmail( ctx context.Context ) ( *model.Admin ,  error ) 
 }
 
 type service struct {
@@ -27,7 +27,7 @@ func NewService(r Repository) Service {
 }
 
 // Login ...
-func (s *service) AdminLogin( ctx context.Context ) ( *model.Admin ,  error ) {
+func (s *service) AdminByEmail( ctx context.Context ) ( *model.Admin ,  error ) {
 	// input validation
-	return s.lR.AdminLogin(ctx)
+	return s.lR.AdminByEmail(ctx)
 }
