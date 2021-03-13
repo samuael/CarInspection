@@ -1,19 +1,21 @@
 package rest
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"net/http"
-	"strconv"
+	// "strconv"
+
 	"github.com/julienschmidt/httprouter"
 	"github.com/samuael/Project/CarInspection/pkg/adding"
+	// "github.com/samuael/Project/CarInspection/pkg/constants/model"
 	"github.com/samuael/Project/CarInspection/pkg/deleting"
-	"github.com/samuael/Project/CarInspection/pkg/http/rest/auth"
+	// "github.com/samuael/Project/CarInspection/pkg/http/rest/auth"
 	"github.com/samuael/Project/CarInspection/pkg/listing"
 	"github.com/samuael/Project/CarInspection/pkg/userpolicy"
 )
 
 // PostHandler provides access to Post api methods.
-type InspectionHandler interface {
+type IInspectionHandler interface {
 	// CreateInspaction( response http.ResponseWriter,request *http.Request)
 	GetInspections(w http.ResponseWriter, r *http.Request  , params httprouter.Params )
 	AddInspection(w http.ResponseWriter, r *http.Request  , params httprouter.Params)
@@ -21,82 +23,82 @@ type InspectionHandler interface {
 	EditInspection(w http.ResponseWriter, r *http.Request , params httprouter.Params)
 }
 
-type inspectionHandler struct {
-	l listing.Service
-	a adding.Service
-	d deleting.Service
-	u userpolicy.Service
+type InspectionHandler struct {
+	Listing 	listing.Service
+	Adding 		adding.Service
+	Deletion 	deleting.Service
+	Userpolicy userpolicy.Service
 }
 
-// 
-func NewInspectionHandler(l listing.Service, a adding.Service, d deleting.Service, u userpolicy.Service) InspectionHandler {
-	return &inspectionHandler{
-		l: l,
-		a: a,
-		d: d,
-		u: u,
+// NewInspectionHandler ... 
+func NewInspectionHandler(l listing.Service, a adding.Service, d deleting.Service, u userpolicy.Service) IInspectionHandler {
+	return &InspectionHandler{
+		Listing: l,
+		Adding: a,
+		Deletion: d,
+		Userpolicy: u,
 	}
 }
 
-func (h inspectionHandler) GetInspections(w http.ResponseWriter, r *http.Request , params httprouter.Params) {
-	w.Header().Set("Content-Type", "application/json")
-	list, err := h.l.GetMyInspections(9)
-	if err != nil {
-		http.Error(w, "Failed to get posts", http.StatusBadRequest)
-		return
-	}
-	json.NewEncoder(w).Encode(list)
+func (h InspectionHandler) GetInspections(w http.ResponseWriter, r *http.Request , params httprouter.Params) {
+	// w.Header().Set("Content-Type", "application/json")
+	// list, err := h.l.GetMyInspections(9)
+	// if err != nil {
+	// 	http.Error(w, "Failed to get posts", http.StatusBadRequest)
+	// 	return
+	// }
+	// json.NewEncoder(w).Encode(list)
 }
 
 // AddPost handler for POST /api/post requests
-func (h inspectionHandler) AddInspection(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	var post adding.Inspection
+func (h InspectionHandler) AddInspection(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	// var inspection model.Inspection
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&post); err != nil {
-		http.Error(w, "Failed to parse post", http.StatusBadRequest)
-		return
-	}
+	// decoder := json.NewDecoder(r.Body)
+	// if err := decoder.Decode(&inspection); err != nil {
+	// 	http.Error(w, "Failed to parse post", http.StatusBadRequest)
+	// 	return
+	// }
 
-	credentials := r.Context().Value("credentials").(*auth.AppClaims)
-	post.AuthorID = credentials.ID
+	// credentials := r.Context().Value("credentials").(*auth.AppClaims)
+	// // inspection.AuthorID = credentials.ID
 
-	if err := h.a.AddInspection(post); err != nil {
-		http.Error(w, "Failed to add post", http.StatusBadRequest)
-		return
-	}
+	// if err := h.a.AddInspection(inspection); err != nil {
+	// 	http.Error(w, "Failed to add post", http.StatusBadRequest)
+	// 	return
+	// }
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode("New post added.")
+	// w.Header().Set("Content-Type", "application/json")
+	// json.NewEncoder(w).Encode("New post added.")
 }
 
-func (h inspectionHandler) DeleteInspection(w http.ResponseWriter, r *http.Request , params httprouter.Params ) {
+func (h InspectionHandler) DeleteInspection(w http.ResponseWriter, r *http.Request , params httprouter.Params ) {
 
-	postID, err := strconv.ParseUint(params.ByName("id"), 10, 64)
-	if err != nil || postID == 0 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
+	// postID, err := strconv.ParseUint(params.ByName("id"), 10, 64)
+	// if err != nil || postID == 0 {
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
 
-	credentials := r.Context().Value("credentials").(*auth.AppClaims)
-	userID := credentials.ID
+	// credentials := r.Context().Value("credentials").(*auth.AppClaims)
+	// userID := credentials.ID
 
-	if allowed := h.u.IsOwnerOfPost(userID, uint(postID)); allowed == false {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	if err := h.d.DeleteInspection(uint(postID)); err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode("post deleted.")
+	// if allowed := h.u.IsOwnerOfPost(userID, uint(postID)); allowed == false {
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
+	// if err := h.d.DeleteInspection(uint(postID)); err != nil {
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
+	// w.Header().Set("Content-Type", "application/json")
+	// json.NewEncoder(w).Encode("post deleted.")
 }
 
-func (h inspectionHandler) EditInspection(w http.ResponseWriter, r *http.Request  , params httprouter.Params) {
-	value := params.ByName("id")
-	if value =="" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
+func (h InspectionHandler) EditInspection(w http.ResponseWriter, r *http.Request  , params httprouter.Params) {
+	// value := params.ByName("id")
+	// if value =="" {
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
 }

@@ -1,13 +1,20 @@
 package login
 
+import (
+	"context"
+
+	"github.com/samuael/Project/CarInspection/pkg/constants/model"
+	// "github.com/samuael/Project/CarInspection/pkg/constants/model"
+)
+
 // Service ...
 type Service interface {
-	Login(User) (uint, error)
+	AdminLogin( ctx context.Context ) ( *model.Admin ,  error ) 
 }
 
 // Repository ...
 type Repository interface {
-	Login(User) (uint, error)
+	AdminLogin( ctx context.Context ) ( *model.Admin ,  error ) 
 }
 
 type service struct {
@@ -20,7 +27,7 @@ func NewService(r Repository) Service {
 }
 
 // Login ...
-func (s *service) Login(u User) (uint, error) {
+func (s *service) AdminLogin( ctx context.Context ) ( *model.Admin ,  error ) {
 	// input validation
-	return s.lR.Login(u)
+	return s.lR.AdminLogin(ctx)
 }

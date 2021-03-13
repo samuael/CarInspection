@@ -1,21 +1,16 @@
 package userpolicy
 
+import "github.com/samuael/Project/CarInspection/platforms/helper"
+
 // Service ...
 type Service interface {
 	IsOwnerOfPost(userID uint, postID uint) bool
-	//SetAdminRole(u User)
-	//SetAuthorRole(u User)
-	//SetUserRole(u User)
-
-	//CanDeletePost(u User, postID uint) bool
-	//CanDeleteComment(User) bool
-	//CanReact(User) bool
+	DoesAdminWithEmailExist( email string ) bool 
 }
 
 type Repository interface {
 	IsOwnerOfPost(userID uint, postID uint) bool
-	//CanDeleteComment(User) bool
-	//CanReact(User) bool
+	DoesAdminWithEmailExist( email string ) bool
 }
 
 type service struct {
@@ -33,4 +28,10 @@ func (s *service) IsOwnerOfPost(userID uint, postID uint) bool {
 		return false
 	}
 	return s.authR.IsOwnerOfPost(userID, postID)
+}
+func (s *service) DoesAdminWithEmailExist( email string ) bool {
+	if email == "" || !(helper.MatchesPattern( email  , helper.EmailRX )){
+		return false 
+	}
+	return  s.authR.DoesAdminWithEmailExist(email)
 }

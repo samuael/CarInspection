@@ -46,7 +46,6 @@ func (h userHandler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	claims, err := h.auth.GenerateToken(id)
 	http.SetCookie(w, &http.Cookie{

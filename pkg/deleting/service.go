@@ -1,17 +1,21 @@
 package deleting
 
 import (
+	"errors"
 	"fmt"
+	"os"
 )
 
 // Service provides Post adding operations.
 type Service interface {
 	DeleteInspection(uint) error
+	DeleteInspector(uint) error
 }
 
 // Repository provides access to Post repository.
 type Repository interface {
 	DeleteInspection(uint) error
+	DeleteInspector(uint) error
 }
 
 type service struct {
@@ -29,4 +33,12 @@ func (s *service) DeleteInspection(u uint) error {
 		return fmt.Errorf("invalid post id")
 	}
 	return s.dR.DeleteInspection(u)
+}
+
+// DeleteInspector ...
+func (s *service) DeleteInspector(id uint) error {
+	if id <= 0 {
+		return errors.New(os.Getenv("INVALID_USER_ID"))
+	}
+	return s.dR.DeleteInspector(id)
 }

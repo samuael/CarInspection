@@ -3,20 +3,19 @@ package rest
 import (
 	"encoding/json"
 	_ "github.com/samuael/Project/CarInspection/api"
-	"github.com/samuael/Project/CarInspection/pkg/http/rest/middleware"
 	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 )
 
 // Route returns an http handler for the api.
-func Route(h InspectionHandler, u UserHandler, m middleware.Rules) http.Handler {
+func Route( adminhandler IAdminHandler ) http.Handler {
 	router := httprouter.New()
 
 
-	router.GET("/posts", h.GetInspections)
+	router.POST("/api/admin/login/", adminhandler.AdminLogin  )
 
-	http.Handle("/", router)
+	http.ListenAndServe(":8080", router)
 	return router
 }
 

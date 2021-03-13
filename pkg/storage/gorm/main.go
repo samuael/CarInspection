@@ -1,5 +1,4 @@
-package postgres
-
+package gorm
 import (
 	"fmt"
 	// _ "github.com/lib/pq"

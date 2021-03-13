@@ -1,17 +1,16 @@
 package main
 
 import (
-	// "log"
 	"context"
 	"os"
 	"sync"
 
 	"github.com/jackc/pgx"
-	pgxplatform "github.com/samuael/Project/CarInspection/platforms/pgx"
+	"github.com/samuael/Project/CarInspection/pkg/http/rest"
+	"github.com/samuael/Project/CarInspection/pkg/login"
+	pgxstorage "github.com/samuael/Project/CarInspection/pkg/storage/pgx_storage"
 	"github.com/subosito/gotenv"
 )
-
-
 
 func init() {
 	gotenv.Load()
@@ -22,12 +21,17 @@ var conn *pgx.Conn
 var connError error
 
 func main(){
-	print(os.Getenv("DB_HOST"))
 	once.Do(func(){
-		conn  , connError = pgxplatform.NewStorage(os.Getenv("DB_USER") , os.Getenv("DB_PASSWORD") , os.Getenv("DB_HOST") , os.Getenv("CAR_INSPECTION_DB_NAME"))
+		conn  , connError = pgxstorage.NewStorage( os.Getenv("DB_USER") , os.Getenv("DB_PASSWORD") , os.Getenv("DB_HOST") , os.Getenv("CAR_INSPECTION_DB_NAME"))
 		if connError != nil {
 			os.Exit(1)
 		}
 	})
 	defer conn.Close(context.Background())
+
+	adminrepo := pgxstorage.NewAdminRepo(conn)
+	loginservice := login.NewService(adminrepo)
+	adminhandler := rest.NewAdminHandler(loginservice)
+	rest.Route(adminhandler)
+
 }
