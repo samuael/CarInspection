@@ -1,6 +1,10 @@
 package userpolicy
 
-import "github.com/samuael/Project/CarInspection/platforms/helper"
+import (
+	"context"
+
+	"github.com/samuael/Project/CarInspection/platforms/helper"
+)
 
 // Service ...
 type Service interface {
@@ -10,7 +14,7 @@ type Service interface {
 
 type Repository interface {
 	IsOwnerOfPost(userID uint, postID uint) bool
-	DoesAdminWithEmailExist( email string ) bool
+	DoesThisEmailExist(ctx context.Context) bool
 }
 
 type service struct {
@@ -33,5 +37,5 @@ func (s *service) DoesAdminWithEmailExist( email string ) bool {
 	if email == "" || !(helper.MatchesPattern( email  , helper.EmailRX )){
 		return false 
 	}
-	return  s.authR.DoesAdminWithEmailExist(email)
+	// return  s.authR.DoesAdminWithEmailExist(email)
 }

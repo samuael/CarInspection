@@ -9,4 +9,5 @@ type Secretary struct {
 	Lastname   string `json:"last_name"   gorm:"type:varchar(255);not null;"`
 	Password   string `json:"password"`
 	Createdby  uint   `json:"created_by"`
+	GarageID   uint64 `json:"garage_id"`
 }

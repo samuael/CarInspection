@@ -10,4 +10,6 @@ type Inspector struct {
 	Password        string `json:"password" 		gorm:"type:varchar(255);not null;"`
 	InspectionCount uint   `json:"inspection_count" gorm:"type:integer; default:0;"`
 	Imageurl        string `json:"imgurl" 			gorm:"type:varchar(255);"`
+	GarageID        uint64 `json:"garage_id"`
+	Createdby       uint   `json:"created_by"`
 }

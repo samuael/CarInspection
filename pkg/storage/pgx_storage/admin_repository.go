@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
+	"github.com/samuael/Project/CarInspection/pkg/admin"
 )
 
 // AdminRepo ...
@@ -15,7 +16,7 @@ type AdminRepo struct {
 
 // NewAdminRepo returning admin repo implementing al  the
 // interfaces specified by the cruds
-func NewAdminRepo(db *pgx.Conn) *AdminRepo {
+func NewAdminRepo(db *pgx.Conn) admin.IAdminRepo {
 	return &AdminRepo{
 		DB: db,
 	}
@@ -32,7 +33,7 @@ func (adminr *AdminRepo) AdminByEmail(ctx context.Context) (*model.Admin, error)
 		print("Error Finding admin ...")
 		return nil, errors.New("Error Admin Not Found ")
 	}
-	if err := row.Scan(&(admin.ID), &(admin.Email), &(admin.Firstname), &(admin.Middlename), &(admin.Lastname), &(admin.Password), &(admin.InspectorsCount)); err == nil {
+	if err := row.Scan(&(admin.ID), &(admin.Email), &(admin.Firstname), &(admin.Middlename), &(admin.Lastname), &(admin.Password), &(admin.GarageID),&(admin.InspectorsCount)); err == nil {
 		return admin, nil
 	} else {
 		return nil, err

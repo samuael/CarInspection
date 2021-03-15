@@ -3,6 +3,7 @@ package model
 // Inspection ...
 type Inspection struct {
 	ID                       uint                 `json:"id" gorm:"primaryKey;autoIncrement:true"`
+	GarageID                 uint64               `json:"garage_id"`
 	InspectorID              uint                 `json:"inspector_id"`
 	Drivername               string               `json:"driver_name"`
 	VehicleModel             string               `json:"vehicle_model"`
@@ -11,7 +12,7 @@ type Inspection struct {
 	VehicleColor             string               `json:"vehicle_color"`
 	LicensePlate             string               `json:"license_plate"`
 	FrontImage               string               `json:"front_image"`
-	LeftSideImage            string               `json:"lest_side_image"`
+	LeftSideImage            string               `json:"left_side_image"`
 	RightSideImage           string               `json:"right_side_image"`
 	BackImage                string               `json:"back_image"`
 	SignatureImage           string               `json:"signature"`

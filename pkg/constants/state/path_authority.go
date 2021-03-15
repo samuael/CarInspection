@@ -1,6 +1,5 @@
 package state
 
-
 type (
 	Permission struct {
 		Roles   []string
@@ -12,7 +11,13 @@ type (
 // Authorities this map represents a map of pathroutes and their permissions
 // and roles that are allowed to
 var Authorities = Authority{
-	"/api/admin/logout/": &Permission{
-		Roles:   []string{ ADMIN, SECRETARY },
+	"/api/logout/": &Permission{
+		Roles: []string{ADMIN, SECRETARY, INSPECTOR},
+	},
+	"/api/secretary/new/": &Permission{
+		Roles: []string{ADMIN},
+	},
+	"/api/inspector/new/": &Permission{
+		Roles: []string{ADMIN},
 	},
 }

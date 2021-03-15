@@ -9,4 +9,5 @@ type Admin struct {
 	Lastname        string `json:"last_name"  	gorm:"type:varchar(255);not null;"`
 	Password        string `json:"password"`
 	InspectorsCount uint   `json:"inspectors_count" gorm:"default:true"`
+	GarageID        uint64 `json:"garage_id"`
 }

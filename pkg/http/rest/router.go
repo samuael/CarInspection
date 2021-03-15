@@ -11,12 +11,14 @@ import (
 )
 
 // Route returns an http handler for the api.
-func Route( rules middleware.Rules ,adminhandler IAdminHandler ) http.Handler {
+func Route( rules middleware.Rules ,adminhandler IAdminHandler  ,  secretaryhandler ISecretaryHandler  , inspectorhandler IInspectorHandler) http.Handler {
 	router := httprouter.New()
 
 
 	router.POST("/api/admin/login/", adminhandler.AdminLogin  )
 	router.GET("/api/admin/logout/"  ,  rules.Authorized(rules.Authenticated(adminhandler.Logout)))
+	router.POST("/api/secretary/new/"   , rules.Authorized(rules.Authenticated(secretaryhandler.Create)))
+	router.POST( "/api/inspector/new/"  , rules.Authorized(rules.Authenticated(inspectorhandler.CreateInspector)))
 
 	http.ListenAndServe(":8080", router)
 	return router

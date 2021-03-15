@@ -7,10 +7,10 @@ import (
 	"os"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/samuael/Project/CarInspection/pkg/admin"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
 	"github.com/samuael/Project/CarInspection/pkg/constants/state"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest/auth"
-	"github.com/samuael/Project/CarInspection/pkg/login"
 	"github.com/samuael/Project/CarInspection/platforms/hash"
 	"github.com/samuael/Project/CarInspection/platforms/helper"
 )
@@ -22,13 +22,13 @@ type IAdminHandler interface {
 
 // AdminHandler ...
 type AdminHandler struct {
-	LoginService  login.Service
 	Authenticator auth.Authenticator
+	AdminSer      admin.IAdminService
 }
 
-func NewAdminHandler(auths auth.Authenticator, l login.Service) IAdminHandler {
+func NewAdminHandler(auths auth.Authenticator, adminser admin.IAdminService) IAdminHandler {
 	return &AdminHandler{
-		LoginService:  l,
+		AdminSer:      adminser,
 		Authenticator: auths,
 	}
 }
@@ -48,16 +48,9 @@ func (adminhr *AdminHandler) AdminLogin(response http.ResponseWriter, request *h
 		response.Write(helper.MarshalThis(resp))
 		return
 	}
-	// _, eer := hash.HashPassword(admin.Password)
-	// if eer != nil {
-	// 	response.WriteHeader(http.StatusUnauthorized)
-	// 	resp.Message = os.Getenv("INVALID_INPUT")
-	// 	response.Write(helper.MarshalThis(resp))
-	// 	return
-	// }
 	ctx := request.Context()
 	ctx = context.WithValue(ctx, "email", admin.Email)
-	newAdmin, err := adminhr.LoginService.AdminByEmail(ctx)
+	newAdmin, err := adminhr.AdminSer.AdminByEmail(ctx)
 	if err != nil {
 		resp.Success = false
 		resp.Message = " No Record Found By this id "
@@ -70,15 +63,16 @@ func (adminhr *AdminHandler) AdminLogin(response http.ResponseWriter, request *h
 		}
 
 		// comparing the hashed password and the password
-		matches := hash.ComparePassword(newAdmin.Password , admin.Password)
+		matches := hash.ComparePassword(newAdmin.Password, admin.Password)
 		if !matches {
 			goto InvalidUsernameOrPassword
 		}
 
 		session := &model.Session{
-			UserID: admin.ID,
-			Email:  newAdmin.Email,
-			Role:   state.ADMIN,
+			ID:       newAdmin.ID,
+			Email:    newAdmin.Email,
+			Role:     state.ADMIN,
+			GarageID: newAdmin.GarageID,
 		}
 
 		success := adminhr.Authenticator.SaveSession(response, session)
@@ -86,8 +80,8 @@ func (adminhr *AdminHandler) AdminLogin(response http.ResponseWriter, request *h
 			resp.Message = os.Getenv("INTERNAL_SERVER_ERROR")
 			resp.Success = false
 			response.WriteHeader(http.StatusInternalServerError)
-			response.Write(helper.MarshalThis(resp))	
-			return 
+			response.Write(helper.MarshalThis(resp))
+			return
 		}
 		resp.Success = true
 		resp.Message = state.SuccesfulyLoggedIn
@@ -107,7 +101,7 @@ InvalidUsernameOrPassword:
 
 }
 
-// Logout || method GET /for an admin to log out 
-func (adminhr *AdminHandler) Logout( response http.ResponseWriter , request *http.Request , params httprouter.Params ){
-	adminhr.Authenticator.DeleteSession(response , request  )
+// Logout || method GET /for an admin to log out
+func (adminhr *AdminHandler) Logout(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	adminhr.Authenticator.DeleteSession(response, request)
 }

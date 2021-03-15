@@ -7,8 +7,9 @@ import "github.com/dgrijalva/jwt-go"
 type (
 	Session struct {
 		jwt.StandardClaims
-		UserID   uint64
+		ID   uint64
 		Email    string
 		Role     string
+		GarageID uint64
 	}
 )
