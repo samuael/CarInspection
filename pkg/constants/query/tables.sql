@@ -4,6 +4,9 @@ CREATE TABLE functionality_results (
     result boolean not null,
     reason varchar(300)
 );
+-- name: insert-functionality-results-table
+INSERT INTO functionality_results (result, reason)
+VALUES ($1, $2);
 -- name: create-address-table
 CREATE TABLE addresses (
     id BIGSERIAL PRIMARY KEY NOT NULL,
@@ -26,17 +29,20 @@ CREATE TABLE inspections (
     garageid integer references garage(id),
     inspector_id integer REFERENCES functionality_results(id),
     drivername varchar(250) NOT NULL,
-    vehicle_mode varchar(100) NOT NULL,
+    vehicle_model varchar(100) NOT NULL,
     vehicle_year varchar(20) NOT NULL,
     vehicle_make varchar(100) NOT NULL,
     vehicle_color varchar(20) NOT NULL,
     license_plate varchar(100) NOT NULL,
+
     front_image varchar(100) NOT NULL,
     left_image varchar(100) NOT NULL,
     right_image varchar(100) NOT NULL,
     back_image varchar(100) NOT NULL,
     signature_image varchar(100) NOT NULL,
+    
     vin_number varchar(100) NOT NULL,
+    
     handbrake BIGINT NOT NULL,
     steering_system BIGINT NOT NULL,
     brake_system BIGINT NOT NULL,
@@ -44,19 +50,21 @@ CREATE TABLE inspections (
     door_and_window BIGINT NOT NULL,
     dashboard_light BIGINT NOT NULL,
     windshield BIGINT NOT NULL,
-    baggage_boor_window BIGINT NOT NULL,
+    baggage_door_window BIGINT NOT NULL,
     gear_box BIGINT NOT NULL,
     shock_absorber BIGINT NOT NULL,
-    front_hight_and_low_beam_light BIGINT NOT NULL,
+    front_high_and_low_beam_light BIGINT NOT NULL,
     rear_light_and_brake_light BIGINT NOT NULL,
     wiper_operation BIGINT NOT NULL,
     car_horn BIGINT NOT NULL,
     side_mirror BIGINT NOT NULL,
     general_body_condition BIGINT NOT NULL,
+    
     driver_performance boolean NOT NULL,
     balancing boolean NOT NULL,
     hazard boolean NOT NULL,
-    signal_light_usage boolean NOT NULL
+    signal_light_usage boolean NOT NULL,
+    passed BOOLEAN NOT NULL
 );
 -- name: create-admins-table
 CREATE TABLE admins (
@@ -78,7 +86,7 @@ CREATE TABLE inspectors (
     lastname varchar(100),
     password text not null,
     imageurl varchar(30),
-    garageid integer references garage(id)
+    garageid integer references garage(id),
     createdby integer references admins(id)
 );
 -- name: create-secretaries-table

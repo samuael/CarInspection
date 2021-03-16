@@ -33,13 +33,31 @@ func NewAdminHandler(auths auth.Authenticator, adminser admin.IAdminService) IAd
 	}
 }
 
+// AdminLogin to handle a login request for an admin ....
+// METHOD : POST
+// INPUT  : JSON
+/*
+	INPUT : {
+		"email"  : "email" ,
+		"password"  : "passs"
+	}
+
+	OUTPUT : {
+		"success" : true ,
+		"message" : "Success message" ,
+		"admin" : {
+			"id" : 3 ,
+			"email" : ""
+		}
+	}
+*/
 func (adminhr *AdminHandler) AdminLogin(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
 	response.Header().Set("Content-Type", "application/json")
 	var admin *model.Admin
 
-	resp := &model.AdminLoginResponse{}
+	resp := &model.LoginResponse{}
 	resp.Success = false
-	resp.Admin = nil
+	resp.User = nil
 	jdecode := json.NewDecoder(request.Body)
 	err := jdecode.Decode(&admin)
 	if err != nil || admin.Email == "" || admin.Password == "" {
@@ -85,7 +103,7 @@ func (adminhr *AdminHandler) AdminLogin(response http.ResponseWriter, request *h
 		}
 		resp.Success = true
 		resp.Message = state.SuccesfulyLoggedIn
-		resp.Admin = newAdmin
+		resp.User = newAdmin
 		response.WriteHeader(200)
 		response.Write(helper.MarshalThis(resp))
 		return
@@ -98,7 +116,6 @@ InvalidUsernameOrPassword:
 		response.Write(helper.MarshalThis(resp))
 		return
 	}
-
 }
 
 // Logout || method GET /for an admin to log out

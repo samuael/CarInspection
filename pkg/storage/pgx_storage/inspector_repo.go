@@ -35,7 +35,7 @@ func (insorrepo *InspectorRepo) CreateInspector(ctx context.Context) (inspector 
 	}
 	inspector = ctx.Value("inspector").(*model.Inspector)
 	conmdTag, er := insorrepo.DB.Exec(context.Background(), "insert into inspectors( email , firstname ,middlename ,lastname , password ,garageid , imageurl , createdby ) values($1 , $2 , $3 , $4 , $5 , $6 , $7 , $8 )",
-		inspector.Email, inspector.Firstname, inspector.Middlename, inspector.Lastname, inspector.Password, inspector.GarageID, inspector.Imageurl)
+		inspector.Email, inspector.Firstname, inspector.Middlename, inspector.Lastname, inspector.Password, inspector.GarageID, inspector.Imageurl, inspector.Createdby)
 	if er != nil || !(conmdTag.Insert()) || conmdTag.RowsAffected() == 0 {
 		return nil, er
 	}
@@ -52,4 +52,35 @@ func (insorrepo *InspectorRepo) DoesThisEmailExist(ctx context.Context) bool {
 		return false
 	}
 	return true
+}
+
+// InspectorByEmail the parameter context will have the email string and
+// we wil be using that email string as a way of selecting the instance data
+func (insorrepo *InspectorRepo) InspectorByEmail(ctx context.Context) (*model.Inspector, error) {
+	defer recover()
+	var inspector *model.Inspector
+	inspector = &model.Inspector{}
+	if ctx.Value("email") == nil {
+		return nil, errors.New(" Invalid Input ")
+	}
+	row := insorrepo.DB.QueryRow(ctx, "SELECT * FROM inspectors WHERE email=$1 ", ctx.Value("email").(string))
+	if row == nil {
+		print("Error Finding admin ...")
+		return nil, errors.New("Error Admin Not Found ")
+	}
+	if err := row.Scan(
+		&(inspector.ID),
+		&(inspector.Email),
+		&(inspector.Firstname),
+		&(inspector.Middlename),
+		&(inspector.Lastname),
+		&(inspector.Password),
+		&(inspector.Imageurl),
+		&(inspector.GarageID),
+		&(inspector.Createdby),
+	); err == nil {
+		return inspector, nil
+	} else {
+		return nil, err
+	}
 }

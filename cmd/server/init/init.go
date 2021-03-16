@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/gchaincl/dotsql"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
+	"github.com/samuael/Project/CarInspection/pkg/constants/state"
 	"github.com/samuael/Project/CarInspection/pkg/storage/sql_db"
 
 	// "github.com/samuael/Project/CarInspection/platforms/hash"
@@ -57,6 +59,7 @@ func main() {
 			os.Exit(1)
 		}
 		if _, err = dot.Exec(conn, "create-address-table"); err != nil {
+			println(err.Error())
 			println(os.Getenv("ERROR_CREATING_TABLE_ADDRESSES"))
 			os.Exit(1)
 		}
@@ -95,6 +98,13 @@ func main() {
 		if _, err = dot.Exec(conn, "insert-admin-table", admin.Email, admin.Firstname, admin.Middlename, admin.Lastname, admin.Password, admin.GarageID); err != nil {
 			println(os.Getenv("ERROR_INSERTING_DEFAULT_ADMIN"))
 			os.Exit(1)
+		}
+		for _, fr := range state.FunctionalityResultInstances {
+			// insert-functionality-results-table
+			if _, err = dot.Exec(conn, "insert-functionality-results-table", fr.Result, fr.Reason); err != nil {
+				println(os.Getenv("ERROR_INSERTING_FUNCTIONALITY_RESULTS_DATA"), "   At Index   "+strconv.Itoa(int(fr.ID)))
+				os.Exit(1)
+			}
 		}
 	}
 	println("\nDatabase Tables succesfuly Initialized ... \n")
@@ -150,7 +160,7 @@ func TakeDefaultGarageData() *model.Garage {
 			}
 			println()
 		} else {
-			println("\n\n---------------------------Re Taking --------------------------------\n\n")
+			println("\n\n---------------------------Re-Taking --------------------------------\n\n")
 		}
 
 	}

@@ -9,6 +9,7 @@ import (
 type IInspectorService interface {
 	CreateInspector(context.Context) (*model.Inspector, error)
 	DoesThisEmailExist(context.Context) bool
+	InspectorByEmail(context.Context) (*model.Inspector, error)
 }
 
 // InspectorService  ...
@@ -30,4 +31,9 @@ func (inorser InspectorService) CreateInspector(ctx context.Context) (*model.Ins
 // DoesThisEmailExist for verifying the presence of the inspector
 func (inorser InspectorService) DoesThisEmailExist(ctx context.Context) bool {
 	return inorser.Repo.DoesThisEmailExist(ctx)
+}
+
+// InspectorByEmail ( context.Context ) (*model.Inspector, error )
+func (insorser InspectorService) InspectorByEmail(ctx context.Context) (*model.Inspector, error) {
+	return insorser.Repo.InspectorByEmail(ctx)
 }

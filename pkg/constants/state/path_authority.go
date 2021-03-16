@@ -11,13 +11,22 @@ type (
 // Authorities this map represents a map of pathroutes and their permissions
 // and roles that are allowed to
 var Authorities = Authority{
-	"/api/logout/": &Permission{
-		Roles: []string{ADMIN, SECRETARY, INSPECTOR},
-	},
 	"/api/secretary/new/": &Permission{
 		Roles: []string{ADMIN},
 	},
 	"/api/inspector/new/": &Permission{
 		Roles: []string{ADMIN},
 	},
+	"/api/inspection/new/": &Permission{
+		Roles: []string{INSPECTOR},
+	},
+	"/api/inspection/": &Permission{
+		Roles: []string{INSPECTOR},
+	},
+	// "/api/inspector/login/": &Permission{
+	// 	Roles: []string{INSPECTOR},
+	// },
+	// "/api/secretary/login/": &Permission{
+	// 	Roles: []string{SECRETARY},
+	// },
 }

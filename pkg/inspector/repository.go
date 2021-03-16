@@ -10,4 +10,5 @@ import (
 type IInspectorRepo interface {
 	CreateInspector(context.Context )  (*model.Inspector , error)
 	DoesThisEmailExist(context.Context) bool 
+	InspectorByEmail( context.Context ) (*model.Inspector, error )
 }

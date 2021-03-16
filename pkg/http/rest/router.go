@@ -11,14 +11,20 @@ import (
 )
 
 // Route returns an http handler for the api.
-func Route( rules middleware.Rules ,adminhandler IAdminHandler  ,  secretaryhandler ISecretaryHandler  , inspectorhandler IInspectorHandler) http.Handler {
+func Route(rules middleware.Rules, adminhandler IAdminHandler, secretaryhandler ISecretaryHandler, inspectorhandler IInspectorHandler, inspectionhandler IInspectionHandler) http.Handler {
 	router := httprouter.New()
 
+	router.POST("/api/admin/login/", adminhandler.AdminLogin)
+	router.POST("/api/inspector/login/", inspectorhandler.InspectorLogin)
+	router.POST("/api/secretary/login/", secretaryhandler.SecretaryLogin)
 
-	router.POST("/api/admin/login/", adminhandler.AdminLogin  )
-	router.GET("/api/admin/logout/"  ,  rules.Authorized(rules.Authenticated(adminhandler.Logout)))
-	router.POST("/api/secretary/new/"   , rules.Authorized(rules.Authenticated(secretaryhandler.Create)))
-	router.POST( "/api/inspector/new/"  , rules.Authorized(rules.Authenticated(inspectorhandler.CreateInspector)))
+	router.GET("/api/logout/", rules.Authenticated(adminhandler.Logout))
+
+	router.POST("/api/secretary/new/", rules.Authorized(rules.Authenticated(secretaryhandler.Create)))
+	router.POST("/api/inspector/new/", rules.Authorized(rules.Authenticated(inspectorhandler.CreateInspector)))
+	router.POST("/api/inspection/new/", rules.Authorized(rules.Authenticated(inspectionhandler.CreateInspection)))
+
+	router.PUT("/api/inspection/", rules.Authorized(rules.Authenticated(inspectionhandler.EditInspection)))
 
 	http.ListenAndServe(":8080", router)
 	return router

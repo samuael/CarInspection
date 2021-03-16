@@ -8,10 +8,14 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode/utf8"
-
-	"github.com/samuael/Project/CarInspection/platforms/helper"
+	// "github.com/samuael/Project/CarInspection/pkg/constants/state"
+	// "github.com/samuael/Project/CarInspection/platforms/helper"
 )
+
+// ImageExtensions list of valid image extensions
+var ImageExtensions = []string{"jpeg", "png", "jpg", "gif", "btmp"}
 
 // PhoneRX represents phone number maching pattern
 var PhoneRX = regexp.MustCompile("(^\\+[0-9]{2}|^\\+[0-9]{2}\\(0\\)|^\\(\\+[0-9]{2}\\)\\(0\\)|^00[0-9]{2}|^0)([0-9]{9}$|[0-9\\-\\s]{10}$)")
@@ -37,15 +41,36 @@ func (inVal *Input) MinLength(field string, d int) {
 	}
 }
 
+// IsImage function checking whether the file is an image or not
+func IsImage(filepath string) bool {
+	extension := GetExtension(filepath)
+	extension = strings.ToLower(extension)
+	for _, e := range ImageExtensions {
+		if e == extension {
+			return true
+		}
+	}
+	return false
+}
+
+// GetExtension function to return the extension of the File Input FileName
+func GetExtension(Filename string) string {
+	fileSlice := strings.Split(Filename, ".")
+	if len(fileSlice) >= 1 {
+		return fileSlice[len(fileSlice)-1]
+	}
+	return ""
+}
+
 // GetFormFile returning the file and it's header and error while opening the file
 // if the file doesnt exist Error message will be added to the Input Validation Errors List
 func (inVal *Input) GetFormFile(request *http.Request, filename string) (multipart.File, *multipart.FileHeader, error) {
 	file, header, err := request.FormFile(filename)
-	if err != nil || file == nil || header == nil || !(helper.IsImage(header.Filename)) {
+	if err != nil || file == nil || header == nil || !(IsImage(header.Filename)) {
 		if err != nil {
 			inVal.VErrors.Add(filename, fmt.Sprintf("Invalid File Value %s ", filename))
-		} else if !(helper.IsImage(header.Filename)) {
-			inVal.VErrors.Add(filename, fmt.Sprintf("Invalid File Type %s ", helper.GetExtension(filename)))
+		} else if !(IsImage(header.Filename)) {
+			inVal.VErrors.Add(filename, fmt.Sprintf("Invalid File Type %s ", GetExtension(filename)))
 			file.Close()
 			return nil, nil, errors.New(" Invalid File Error ")
 		} else {

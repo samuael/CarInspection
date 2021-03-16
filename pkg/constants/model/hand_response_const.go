@@ -11,6 +11,13 @@ type AdminLoginResponse struct {
 	Admin   *Admin `json:"admin"`
 }
 
+// LoginResponse to be usedby the admin response class
+type LoginResponse struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message"`
+	User    interface{} `json:"user"`
+}
+
 // SimpleSuccessNotifier ...
 type SimpleSuccessNotifier struct {
 	Success bool   `json:"success"`
@@ -24,4 +31,11 @@ type InspectionCreationResponse struct {
 	Message    string                `json:"message"`
 	Inspection *Inspection           `json:"inspection"`
 	Errors     form.ValidationErrors `json:"errors"`
+}
+
+// InspectionUpdateResponse   model to represent output message
+type InspectionUpdateResponse struct {
+	Success    bool        `json:"success"`
+	Message    string      `json:"message"`
+	Inspection *Inspection `json:"inspection"`
 }

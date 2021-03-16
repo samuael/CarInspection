@@ -48,3 +48,31 @@ func (secretr *SecretaryRepository) DoesThisEmailExist(ctx context.Context) bool
 	}
 	return true
 }
+
+// SecretaryByEmail parameter context will have email value that is to be used in the  database
+func (secretr *SecretaryRepository) SecretaryByEmail(ctx context.Context) (*model.Secretary, error) {
+	var secretary *model.Secretary
+	secretary = &model.Secretary{}
+	if ctx.Value("email") == nil {
+		return nil, errors.New(" Invalid Input ")
+	}
+	row := secretr.DB.QueryRow(ctx, "SELECT * FROM secretaries WHERE email=$1 ", ctx.Value("email").(string))
+	if row == nil {
+		print("Error Finding admin ...")
+		return nil, errors.New("Error Admin Not Found ")
+	}
+	if err := row.Scan(
+		&(secretary.ID),
+		&(secretary.Email),
+		&(secretary.Firstname),
+		&(secretary.Middlename),
+		&(secretary.Lastname),
+		&(secretary.Password),
+		&(secretary.GarageID),
+		&(secretary.Createdby),
+	); err == nil {
+		return secretary, nil
+	} else {
+		return nil, err
+	}
+}

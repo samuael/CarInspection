@@ -9,7 +9,7 @@ import (
 // Service ...
 type Service interface {
 	IsOwnerOfPost(userID uint, postID uint) bool
-	DoesAdminWithEmailExist( email string ) bool 
+	DoesAdminWithEmailExist(email string) bool
 }
 
 type Repository interface {
@@ -33,9 +33,9 @@ func (s *service) IsOwnerOfPost(userID uint, postID uint) bool {
 	}
 	return s.authR.IsOwnerOfPost(userID, postID)
 }
-func (s *service) DoesAdminWithEmailExist( email string ) bool {
-	if email == "" || !(helper.MatchesPattern( email  , helper.EmailRX )){
-		return false 
+func (s *service) DoesAdminWithEmailExist(email string) bool {
+	if email == "" || !(helper.MatchesPattern(email, helper.EmailRX)) {
+		return false
 	}
-	// return  s.authR.DoesAdminWithEmailExist(email)
+	return false
 }

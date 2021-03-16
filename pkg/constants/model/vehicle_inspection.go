@@ -37,7 +37,74 @@ type Inspection struct {
 	Balancing                bool                 `json:"balancing"`
 	Hazard                   bool                 `json:"hazard"`
 	SignalLightUsage         bool                 `json:"signal_light_usage"` // turn indicator
+	Passed                   bool                 `json:"passed"`
 }
+
+// InspectionUpdate ... this datastructure is created to be used for parsing the input json for update
+type InspectionUpdate struct {
+	ID           int    `json:"id"`
+	Drivername   string `json:"driver_name"`
+	VehicleModel string `json:"vehicle_model"`
+	VehicleYear  string `json:"vehicle_year"`
+	VehicleMake  string `json:"vehicle_make"`
+	VehicleColor string `json:"vehicle_color"`
+
+	HandBrake                string `json:"hand_brake"`
+	SteeringSystem           string `json:"steering_system"`
+	BrakeSystem              string `json:"brake_system"`
+	SeatBelt                 string `json:"seat_belt"`
+	DoorAndWindow            string `json:"door_and_window"`
+	DashBoardLight           string `json:"dash_board_light"`
+	WindShield               string `json:"wind_shield"`
+	BaggageDoorWindow        string `json:"baggage_door_window"`
+	GearBox                  string `json:"gear_box"`
+	ShockAbsorber            string `json:"shock_absorber"`
+	FrontHighAndLowBeamLight string `json:"high_and_low_beam_light"`
+	RearLightAndBrakeLight   string `json:"rear_light_and_break_light"`
+	WiperOperation           string `json:"wiper_operation"`
+	CarHorn                  string `json:"car_horn"`
+	SideMirrors              string `json:"side_mirrors"`
+	GeneralBodyCondition     string `json:"general_body_condition"`
+	DriverPerformance        bool   `json:"driver_performance"`
+	Balancing                bool   `json:"balancing"`
+	Hazard                   bool   `json:"hazard"`
+	SignalLightUsage         bool   `json:"signal_light_usage"`
+}
+
+/*
+	InspectionUpdate JSON Value
+	{
+		"id":0,
+		"driver_name":"",
+		"vehicle_model":"",
+		"vehicle_year":"",
+		"vehicle_make":"",
+		"vehicle_color":"",
+		"hand_brake":"",
+		"steering_system":"",
+		"brake_system":"",
+		"seat_belt":"",
+		"door_and_window":"",
+		"dash_board_light":"",
+		"wind_shield":"",
+		"baggage_door_window":"",
+		"gear_box":"",
+		"shock_absorber":"",
+		"high_and_low_beam_light":"",
+		"rear_light_and_break_light":"",
+		"wiper_operation":"",
+		"car_horn":"",
+		"side_mirrors":"",
+		"general_body_condition":"",
+		"driver_performance":"",
+		"balancing":"",
+		"hazard":"",
+		"signal_light_usage":"",
+}
+
+
+
+*/
 
 // FunctionalityResult to be used by a list of functionality parameters and their reasons
 type FunctionalityResult struct {

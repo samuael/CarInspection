@@ -10,6 +10,7 @@ import (
 	"github.com/samuael/Project/CarInspection/pkg/http/rest"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest/auth"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest/middleware"
+	"github.com/samuael/Project/CarInspection/pkg/inspection"
 	"github.com/samuael/Project/CarInspection/pkg/inspector"
 	"github.com/samuael/Project/CarInspection/pkg/secretary"
 	pgxstorage "github.com/samuael/Project/CarInspection/pkg/storage/pgx_storage"
@@ -39,13 +40,16 @@ func main() {
 	adminrepo := pgxstorage.NewAdminRepo(conn)
 	secretaryrepo := pgxstorage.NewSecretaryRepo(conn)
 	inspectorrepo := pgxstorage.NewInspectorRepo(conn)
+	inspectionrepo := pgxstorage.NewInspectionRepo(conn)
 
 	adminservice := admin.NewAdminService(adminrepo)
 	secretaryservice := secretary.NewSecretaryService(secretaryrepo)
 	inspectorservice := inspector.NewInspectorService(inspectorrepo)
+	inspectionservice := inspection.NewInspectionService(inspectionrepo)
 
+	inspectionhandler := rest.NewInspectionHandler(inspectionservice)
 	inspectorhadnler := rest.NewInspectorHandler(authenticator, inspectorservice)
 	secretaryhandler := rest.NewSecretaryHandler(authenticator, secretaryservice)
 	adminhandler := rest.NewAdminHandler(authenticator, adminservice)
-	rest.Route(rules, adminhandler, secretaryhandler, inspectorhadnler)
+	rest.Route(rules, adminhandler, secretaryhandler, inspectorhadnler , inspectionhandler )
 }

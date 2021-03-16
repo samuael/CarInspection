@@ -9,6 +9,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
+	"github.com/samuael/Project/CarInspection/pkg/constants/state"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest/auth"
 	"github.com/samuael/Project/CarInspection/pkg/inspector"
 	"github.com/samuael/Project/CarInspection/platforms/helper"
@@ -16,6 +17,7 @@ import (
 
 type IInspectorHandler interface {
 	CreateInspector(http.ResponseWriter, *http.Request, httprouter.Params)
+	InspectorLogin(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 }
 
 // InspetorHandler inspector handler for
@@ -123,6 +125,7 @@ func (insorh *InspectorHandler) CreateInspector(response http.ResponseWriter, re
 	inspectr.InspectionCount = 0
 	inspectr.Password = password
 	inspectr.Imageurl = ""
+	inspectr.Createdby = uint(adminsess.ID)
 	ctx = context.WithValue(ctx, "inspector", inspectr)
 	inspectr, era := insorh.InspectorSer.CreateInspector(ctx)
 	if era != nil || inspectr == nil {
@@ -135,4 +138,90 @@ func (insorh *InspectorHandler) CreateInspector(response http.ResponseWriter, re
 	response.WriteHeader(http.StatusCreated)
 	response.Write(helper.MarshalThis(sucnti))
 	recover()
+}
+
+// InspectorLogin to handle a login request for an admin ....
+// METHOD : POST
+// INPUT  : JSON
+/*
+	INPUT : {
+		"email"  : "email" ,
+		"password"  : "passs"
+	}
+
+	OUTPUT : {
+		"success" : true ,
+		"message" : "Success message" ,
+		"admin" : {
+			"id" : 3 ,
+			"email" : ""
+		}
+	}
+*/
+func (insorh *InspectorHandler) InspectorLogin(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	var inspector *model.Inspector
+
+	resp := &model.LoginResponse{}
+	resp.Success = false
+	resp.User = nil
+	jdecode := json.NewDecoder(request.Body)
+	err := jdecode.Decode(&inspector)
+	if err != nil || inspector.Email == "" || inspector.Password == "" {
+		response.WriteHeader(http.StatusUnauthorized)
+		resp.Message = os.Getenv("INVALID_INPUT")
+		response.Write(helper.MarshalThis(resp))
+		return
+	}
+	ctx := request.Context()
+	ctx = context.WithValue(ctx, "email", inspector.Email)
+	newInspector, err := insorh.InspectorSer.InspectorByEmail(ctx)
+	if err != nil {
+		resp.Success = false
+		resp.Message = " No Record Found By this id "
+		response.WriteHeader(401)
+		response.Write(helper.MarshalThis(resp))
+		return
+	} else {
+		if newInspector == nil {
+			goto InvalidUsernameOrPassword
+		}
+
+		// comparing the hashed password and the password
+		// matches := hash.ComparePassword(newAdmin.Password, admin.Password)
+		matches := newInspector.Password == inspector.Password
+		if !matches {
+			goto InvalidUsernameOrPassword
+		}
+
+		session := &model.Session{
+			ID:       uint64(newInspector.ID),
+			Email:    newInspector.Email,
+			Role:     state.INSPECTOR,
+			GarageID: newInspector.GarageID,
+		}
+
+		success := insorh.Authenticator.SaveSession(response, session)
+		if !success {
+			resp.Message = os.Getenv("INTERNAL_SERVER_ERROR")
+			resp.Success = false
+			response.WriteHeader(http.StatusInternalServerError)
+			response.Write(helper.MarshalThis(resp))
+			return
+		}
+		resp.Success = true
+		resp.Message = state.SuccesfulyLoggedIn
+		resp.User = newInspector
+		response.WriteHeader(200)
+		response.Write(helper.MarshalThis(resp))
+		return
+	}
+InvalidUsernameOrPassword:
+	{
+		resp.Success = false
+		resp.Message = state.InvalidUsernameORPassword
+		response.WriteHeader(401)
+		response.Write(helper.MarshalThis(resp))
+		return
+	}
 }

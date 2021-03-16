@@ -21,7 +21,6 @@ func NewAdminRepo(db *pgx.Conn) admin.IAdminRepo {
 		DB: db,
 	}
 }
-
 func (adminr *AdminRepo) AdminByEmail(ctx context.Context) (*model.Admin, error) {
 	var admin *model.Admin
 	admin = &model.Admin{}
@@ -39,7 +38,6 @@ func (adminr *AdminRepo) AdminByEmail(ctx context.Context) (*model.Admin, error)
 		return nil, err
 	}
 }
-
 // func (adminr *AdminRepo) DoesAdminWithEmailExist( ctx context.Context , email string ) bool{
 // 	row := adminr.DB.QueryRow(ctx , "SELECT id FROM admins WHERE EMAIL=")
 // }
