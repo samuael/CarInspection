@@ -25,6 +25,13 @@ func Route(rules middleware.Rules, adminhandler IAdminHandler, secretaryhandler 
 	router.POST("/api/inspection/new/", rules.Authorized(rules.Authenticated(inspectionhandler.CreateInspection)))
 
 	router.PUT("/api/inspection/", rules.Authorized(rules.Authenticated(inspectionhandler.EditInspection)))
+	router.PUT("/api/inspection/images/", rules.Authorized(rules.Authenticated(inspectionhandler.UpdateInspectionFiles)))
+	router.DELETE("/api/inspection/", rules.Authorized(rules.Authenticated(inspectionhandler.DeleteInspection)))
+	router.GET("/api/inspector/myinspections/", rules.Authorized(rules.Authenticated(inspectorhandler.GetMyInspections)))
+	router.GET("/api/inspection/:id", rules.Authenticated(inspectionhandler.GetInspectionByID))
+	router.GET("/inspection/report/:id", rules.Authenticated(inspectionhandler.GetInspectionAsPDF))
+
+	router.PUT("/api/password/new/", rules.Authorized(rules.Authenticated(adminhandler.ChangePassword)))
 
 	http.ListenAndServe(":8080", router)
 	return router

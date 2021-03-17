@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"os"
@@ -15,15 +16,22 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
+	"github.com/samuael/Project/CarInspection/pkg/garage"
 	"github.com/samuael/Project/CarInspection/pkg/inspection"
+	"github.com/samuael/Project/CarInspection/pkg/inspector"
 	"github.com/samuael/Project/CarInspection/platforms/form"
 	"github.com/samuael/Project/CarInspection/platforms/helper"
+	"github.com/samuael/Project/CarInspection/platforms/pdf"
 )
 
 // PostHandler provides access to Post api methods.
 type IInspectionHandler interface {
 	CreateInspection(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	EditInspection(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	UpdateInspectionFiles(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	DeleteInspection(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	GetInspectionByID(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	GetInspectionAsPDF(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	// GetInspections(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	// AddInspection(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	// DeleteInspection(w http.ResponseWriter, r *http.Request, params httprouter.Params)
@@ -32,12 +40,18 @@ type IInspectionHandler interface {
 
 type InspectionHandler struct {
 	InspectionSer inspection.IInspectionService
+	Template      *template.Template
+	InspectorSer  inspector.IInspectorService
+	GarageSer     garage.IGarageService
 }
 
 // NewInspectionHandler ...
-func NewInspectionHandler(inser inspection.IInspectionService) IInspectionHandler {
+func NewInspectionHandler(inser inspection.IInspectionService, temp *template.Template, insor inspector.IInspectorService, garageser garage.IGarageService) IInspectionHandler {
 	return &InspectionHandler{
 		InspectionSer: inser,
+		Template:      temp,
+		InspectorSer:  insor,
+		GarageSer:     garageser,
 	}
 }
 
@@ -240,6 +254,33 @@ func (h InspectionHandler) CreateInspection(response http.ResponseWriter, reques
 		res.Errors = input.VErrors
 		response.WriteHeader(http.StatusBadRequest)
 		res.Message = os.Getenv("INVALID_INPUT")
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+
+	licensePlate := request.FormValue("license_plate")
+	vinNumber := request.FormValue("vin_number")
+
+	ctx = context.WithValue(ctx, "license_plate", licensePlate)
+	ctx = context.WithValue(ctx, "vin_number", vinNumber)
+
+	exists := h.InspectionSer.DoesThisVahicheWithLicensePlateExist(ctx)
+	if exists {
+		res.HasError = false
+		res.Errors = nil
+		// Status Code conflict
+		response.WriteHeader(409)
+		res.Message = fmt.Sprintf("Inspection With Specified License Plate '%s' Exists!", licensePlate)
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	exists = h.InspectionSer.DoesThisVehicleWithVinNumberExists(ctx)
+	if exists {
+		res.HasError = false
+		res.Errors = nil
+		// Status Code conflict
+		response.WriteHeader(409)
+		res.Message = fmt.Sprintf("Inspection With Specified Vin Number '%s' Exists!", vinNumber)
 		response.Write(helper.MarshalThis(res))
 		return
 	}
@@ -496,7 +537,7 @@ func (h InspectionHandler) EditInspection(response http.ResponseWriter, request 
 	// getting the variables that are to be included in the updated inspection
 
 	formerInspection, erra := h.InspectionSer.GetInspectionByID(ctx)
-	if erra != nil  || formerInspection==nil  {
+	if erra != nil || formerInspection == nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		res.Success = false
 		res.Message = " Internal Server Error "
@@ -617,25 +658,341 @@ func (h InspectionHandler) EditInspection(response http.ResponseWriter, request 
 	return
 }
 
-func (h InspectionHandler) DeleteInspection(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+// UpdateInspectionFiles   ... route to update the files that the request may hold
+// METHOD : PUT
+// INPUT : MULTIPART FORM VALUE
+// OUTPUT : JSON
+// AUTHORIZATION : INSPECTOR ONLY
+func (h *InspectionHandler) UpdateInspectionFiles(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	ctx := request.Context()
+	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
+	// PARSING THE MULTIPART FORM FILE
+	res := &model.InspectionUpdateResponse{
+		Success:    false,
+		Message:    os.Getenv("BAD_REQUEST_BODY"),
+		Inspection: nil,
+	}
+	err := request.ParseMultipartForm(9999999999999999)
+	inspectionID, err := strconv.Atoi(request.FormValue("inspection_id"))
+	if err != nil {
+		// return that the request is bad request
+		response.WriteHeader(400)
+		res.Message = os.Getenv("BAD_REQUEST_BODY")
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	ctx = context.WithValue(ctx, "inspector_id", uint(session.ID))
+	ctx = context.WithValue(ctx, "inspection_id", uint(inspectionID))
+	// checking the whether the inspector is the owner of the inspection or not
+	success, erra := h.InspectionSer.IsInspectionOwner(ctx)
+	if erra != nil {
+		response.WriteHeader(http.StatusNotModified)
+		res.Message = os.Getenv("RESOURCE_NOT_FOUND") + "\n Inspection With this ID not Found ..."
+		response.Write(helper.MarshalThis(res))
+		return
+	} else if !success {
+		response.WriteHeader(http.StatusUnauthorized)
+		res.Message = os.Getenv("UNAUTHORIZED_ACCESS") + "\n You are not authorized to update this Inspection!"
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	// The Inspection os Confirmed that . it is created by the inspector ..
+	// getting the variables that are to be included in the updated inspection
+	// try fetching the five image files if not any one of them exist , then i will exit the loop
+	var a, b, c, d, e bool
+	frontImage, frontHeader, eraa := request.FormFile("front_image")
+	if eraa == nil {
+		a = true
+		defer frontImage.Close()
+	}
+	leftImage, leftHeader, erbb := request.FormFile("left_side_image")
+	if erbb == nil {
+		b = true
+		defer leftImage.Close()
+	}
+	rightImage, rightHeader, ercc := request.FormFile("right_side_image")
+	if ercc == nil {
+		c = true
+		defer rightImage.Close()
+	}
+	backImage, backHeader, erdd := request.FormFile("back_image")
+	if erdd == nil {
+		d = true
+		defer backImage.Close()
+	}
+	signatureImage, signatureHeader, eree := request.FormFile("signature")
+	if eree == nil {
+		e = true
+		defer signatureImage.Close()
+	}
+	var afilename, bfilename, cfilename, dfilename, efilename string
 
-	// postID, err := strconv.ParseUint(params.ByName("id"), 10, 64)
-	// if err != nil || postID == 0 {
-	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	// 	return
-	// }
+	if a {
+		afilename = helper.GenerateRandomString(10, helper.CHARACTERS) + "." + helper.GetExtension(frontHeader.Filename)
+	}
+	if b {
+		bfilename = helper.GenerateRandomString(10, helper.CHARACTERS) + "." + helper.GetExtension(leftHeader.Filename)
+	}
+	if c {
+		cfilename = helper.GenerateRandomString(10, helper.CHARACTERS) + "." + helper.GetExtension(rightHeader.Filename)
+	}
+	if d {
+		dfilename = helper.GenerateRandomString(10, helper.CHARACTERS) + "." + helper.GetExtension(backHeader.Filename)
+	}
+	if e {
+		efilename = helper.GenerateRandomString(10, helper.CHARACTERS) + "." + helper.GetExtension(signatureHeader.Filename)
+	}
 
-	// credentials := r.Context().Value("credentials").(*auth.AppClaims)
-	// userID := credentials.ID
+	formerInspection, erra := h.InspectionSer.GetInspectionByID(ctx)
+	formerFrontImageFilename := formerInspection.FrontImage
+	formerLeftImageFilename := formerInspection.LeftSideImage
+	formerRightImageFilename := formerInspection.RightSideImage
+	formerBackImageFilename := formerInspection.BackImage
+	formerSignatureFilename := formerInspection.SignatureImage
 
-	// if allowed := h.u.IsOwnerOfPost(userID, uint(postID)); allowed == false {
-	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	// 	return
-	// }
-	// if err := h.d.DeleteInspection(uint(postID)); err != nil {
-	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	// 	return
-	// }
-	// w.Header().Set("Content-Type", "application/json")
-	// json.NewEncoder(w).Encode("post deleted.")
+	pathToAssetsDirectory := os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY")
+	var anewf, bnewf, cnewf, dnewf, enewf *os.File
+	var era, erb, erc, erd, ere error
+	if a {
+		anewf, era = os.Create(pathToAssetsDirectory + "frontImages/" + afilename)
+		if era == nil {
+			defer anewf.Close()
+		}
+		_, era = io.Copy(anewf, frontImage)
+	}
+	if b {
+		bnewf, erb = os.Create(pathToAssetsDirectory + "leftImages/" + bfilename)
+		if erb == nil {
+			defer bnewf.Close()
+		}
+		_, erb = io.Copy(bnewf, leftImage)
+	}
+	if c {
+		cnewf, erc = os.Create(pathToAssetsDirectory + "rightImages/" + cfilename)
+		if erc == nil {
+			defer cnewf.Close()
+		}
+		_, erc = io.Copy(cnewf, rightImage)
+	}
+	if d {
+		dnewf, erd = os.Create(pathToAssetsDirectory + "backImages/" + dfilename)
+		if erd == nil {
+			defer dnewf.Close()
+		}
+		_, erd = io.Copy(dnewf, backImage)
+	}
+	if e {
+		enewf, ere = os.Create(pathToAssetsDirectory + "signatureImages/" + efilename)
+		if ere == nil {
+			defer enewf.Close()
+		}
+		_, ere = io.Copy(enewf, signatureImage)
+	}
+
+	if era != nil || erb != nil || erc != nil || erd != nil || ere != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		res.Message = os.Getenv("INTERNAL_SERVER_ERROR")
+		res.Success = false
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	if a {
+		formerInspection.FrontImage = "public/frontImages/" + afilename
+	}
+	if b {
+		formerInspection.LeftSideImage = "public/leftImages/" + bfilename
+	}
+	if c {
+		formerInspection.RightSideImage = "public/rightImages/" + cfilename
+	}
+	if d {
+		formerInspection.BackImage = "public/backImages/" + dfilename
+	}
+	if e {
+		formerInspection.SignatureImage = "public/signatureImages/" + efilename
+	}
+
+	ctx = context.WithValue(ctx, "inspection", formerInspection)
+	// saving the change
+	savedInspection, err := h.InspectionSer.UpdateInspection(ctx)
+	if err != nil || savedInspection == nil {
+		// deleting the newly created files
+		os.Remove(pathToAssetsDirectory + "frontImages/" + afilename)
+		os.Remove(pathToAssetsDirectory + "leftImages/" + bfilename)
+		os.Remove(pathToAssetsDirectory + "rightImages/" + cfilename)
+		os.Remove(pathToAssetsDirectory + "backImages/" + dfilename)
+		os.Remove(pathToAssetsDirectory + "signatureImages/" + efilename)
+
+		println(err.Error())
+		response.WriteHeader(http.StatusInternalServerError)
+		res.Inspection = nil
+		res.Success = false
+		res.Message = os.Getenv("INTERNAL_SERVER_ERROR")
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	// the updated inspection is saved succesfully
+	os.Remove(pathToAssetsDirectory + strings.TrimPrefix(formerFrontImageFilename, "public/"))
+	os.Remove(pathToAssetsDirectory + strings.TrimPrefix(formerLeftImageFilename, "public/"))
+	os.Remove(pathToAssetsDirectory + strings.TrimPrefix(formerRightImageFilename, "public/"))
+	os.Remove(pathToAssetsDirectory + strings.TrimPrefix(formerBackImageFilename, "public/"))
+	os.Remove(pathToAssetsDirectory + strings.TrimPrefix(formerSignatureFilename, "public/"))
+
+	response.WriteHeader(200)
+	res.Success = true
+	res.Message = os.Getenv("UPPDATED_SUCCESFULY")
+	res.Inspection = savedInspection
+	response.Write(helper.MarshalThis(res))
+}
+
+func (h InspectionHandler) DeleteInspection(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	ctx := request.Context()
+	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
+
+	res := &model.SimpleSuccessNotifier{
+		Success: false, Message: "Bad Request ",
+	}
+
+	inspectionID, era := strconv.Atoi(request.FormValue("inspection_id"))
+	if era != nil || inspectionID <= 0 {
+		// return that the request is bad request
+		response.WriteHeader(400)
+		res.Message = os.Getenv("BAD_REQUEST_BODY")
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	ctx = context.WithValue(ctx, "inspection_id", uint(inspectionID))
+	ctx = context.WithValue(ctx, "inspector_id", uint(session.ID))
+	// checking the whether the inspector is the owner of the inspection or not
+	success, erra := h.InspectionSer.IsInspectionOwner(ctx)
+	if erra != nil {
+		response.WriteHeader(http.StatusNotModified)
+		res.Message = os.Getenv("RESOURCE_NOT_FOUND") + "\n Inspection With this ID not Found ..."
+		response.Write(helper.MarshalThis(res))
+		return
+	} else if !success {
+		response.WriteHeader(http.StatusUnauthorized)
+		res.Message = os.Getenv("UNAUTHORIZED_ACCESS") + "\n You are not authorized to update this Inspection!"
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	// The Inspection os Confirmed that . it is created by the inspector ..
+
+	// calling the delete inspection method to delete  the inspection from the databse
+	success, era = h.InspectionSer.DeleteInspection(ctx)
+	if !success || era != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		res.Message = os.Getenv("INTERNAL_SERVER_ERROR")
+		res.Success = false
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	res.Message = "Inspection Deleted Succesfuly!"
+	res.Success = true
+	response.WriteHeader(204)
+	response.Write(helper.MarshalThis(res))
+}
+
+// GetInspectionByID method to get inspection by id
+func (h *InspectionHandler) GetInspectionByID(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	ctx := request.Context()
+	res := &struct {
+		Success    bool              `json:"success"`
+		ID         uint              `json:"id"`
+		Inspection *model.Inspection `json:"inspection"`
+	}{
+		Success: false,
+	}
+	inspectionID, era := strconv.Atoi(params.ByName("id"))
+	if era != nil || inspectionID <= 0 {
+		response.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	res.ID = uint(inspectionID)
+
+	ctx = context.WithValue(ctx, "inspection_id", uint(inspectionID))
+	inspection, er := h.InspectionSer.GetInspectionByID(ctx)
+	if er != nil {
+		response.WriteHeader(http.StatusNotFound)
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	res.Inspection = inspection
+	res.Success = true
+	response.WriteHeader(200)
+	response.Write(helper.MarshalThis(res))
+}
+
+// GetInspectionAsPDf ... methdo to print the inspection data as a pdf format
+func (h *InspectionHandler) GetInspectionAsPDF(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	inspectionID, era := strconv.Atoi(params.ByName("id"))
+	if era != nil {
+		response.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	ctx := request.Context()
+	ctx = context.WithValue(ctx, "inspection_id", uint(inspectionID))
+	inspection, era := h.InspectionSer.GetInspectionByID(ctx)
+	if era != nil || inspection == nil {
+		println("Inspection Not Found ")
+		response.WriteHeader(http.StatusNotFound)
+		return
+	}
+	ctx = context.WithValue(ctx, "inspector_id", inspection.InspectorID)
+	inspector, era := h.InspectorSer.GetInspectorID(ctx)
+	if era != nil || inspector == nil {
+		println("Inspector Not Found ")
+		response.WriteHeader(http.StatusNotFound)
+		return
+	}
+	ctx = context.WithValue(ctx, "garage_id", uint(inspection.GarageID))
+	garage, era := h.GarageSer.GetGarageByID(ctx)
+	if era != nil || garage == nil {
+		println("Garage Not Found ")
+		response.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	in := &struct {
+		AssetsDirectory string
+		Garage          *model.Garage
+		Inspection      *model.Inspection
+		Inspector       *model.Inspector
+	}{
+		AssetsDirectory: os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY"),
+		Garage:          garage,
+		Inspection:      inspection,
+		Inspector:       inspector,
+	}
+	print(in)
+
+	fileDirectory := os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY") + "html/" + helper.GenerateRandomString(5, helper.CHARACTERS) + ".html"
+	// craete file to save the image file
+	zhtml, er := os.Create(fileDirectory)
+	if er != nil || zhtml == nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer zhtml.Close()
+	er = h.Template.ExecuteTemplate(zhtml, "inspection.html", in)
+	if er != nil {
+		os.Remove(fileDirectory)
+		response.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	pdfFileDirectory := pdf.GetThePdf(fileDirectory)
+	if pdfFileDirectory == "" {
+		println("  Pdf File Directory ...  ")
+		response.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	pdfFile, era := os.Open(pdfFileDirectory)
+	if era != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	io.Copy(response, pdfFile)
 }

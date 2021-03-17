@@ -33,16 +33,13 @@ CREATE TABLE inspections (
     vehicle_year varchar(20) NOT NULL,
     vehicle_make varchar(100) NOT NULL,
     vehicle_color varchar(20) NOT NULL,
-    license_plate varchar(100) NOT NULL,
-
+    license_plate varchar(100) UNIQUE NOT NULL,
     front_image varchar(100) NOT NULL,
     left_image varchar(100) NOT NULL,
     right_image varchar(100) NOT NULL,
     back_image varchar(100) NOT NULL,
     signature_image varchar(100) NOT NULL,
-    
-    vin_number varchar(100) NOT NULL,
-    
+    vin_number varchar(100) UNIQUE NOT NULL,
     handbrake BIGINT NOT NULL,
     steering_system BIGINT NOT NULL,
     brake_system BIGINT NOT NULL,
@@ -59,7 +56,6 @@ CREATE TABLE inspections (
     car_horn BIGINT NOT NULL,
     side_mirror BIGINT NOT NULL,
     general_body_condition BIGINT NOT NULL,
-    
     driver_performance boolean NOT NULL,
     balancing boolean NOT NULL,
     hazard boolean NOT NULL,

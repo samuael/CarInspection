@@ -12,4 +12,5 @@ type ISecretaryRepo interface {
 	CreateSecretary(ctx context.Context) (secretary *model.Secretary, er error)
 	DoesThisEmailExist(ctx context.Context) bool
 	SecretaryByEmail(context.Context) (*model.Secretary, error)
+	ChangePassword(ctx context.Context) (bool, error)
 }

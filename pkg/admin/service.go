@@ -8,7 +8,8 @@ import (
 
 // Interfaces to be implemented by the admin service instances
 type IAdminService interface {
-	AdminByEmail(ctx context.Context) (*model.Admin , error )
+	AdminByEmail(ctx context.Context) (*model.Admin, error)
+	ChangePassword(ctx context.Context) (bool, error)
 }
 
 // AdminService struct representing a admin service
@@ -23,6 +24,11 @@ func NewAdminService(repo IAdminRepo) IAdminService {
 	}
 }
 
-func (adminser *AdminService) AdminByEmail(ctx context.Context) (*model.Admin  , error ) {
+func (adminser *AdminService) AdminByEmail(ctx context.Context) (*model.Admin, error) {
 	return adminser.Repo.AdminByEmail(ctx)
+}
+
+// ChangePassword (ctx context.Context) (bool, error)
+func (adminser *AdminService) ChangePassword(ctx context.Context) (bool, error) {
+	return adminser.Repo.ChangePassword(ctx)
 }

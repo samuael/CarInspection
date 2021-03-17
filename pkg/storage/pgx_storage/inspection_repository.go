@@ -3,7 +3,8 @@ package pgx_storage
 import (
 	"context"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/pgxpool"
+	// "github.com/jackc/pgx"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
 	"github.com/samuael/Project/CarInspection/pkg/constants/state"
 	"github.com/samuael/Project/CarInspection/pkg/inspection"
@@ -11,10 +12,10 @@ import (
 
 // InspectionRepo struct representing inspection repository and it's methods
 type InspectionRepo struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
-func NewInspectionRepo(conn *pgx.Conn) inspection.IInspectionRepo {
+func NewInspectionRepo(conn *pgxpool.Pool) inspection.IInspectionRepo {
 	return &InspectionRepo{
 		DB: conn,
 	}
@@ -542,4 +543,42 @@ func (insrepo *InspectionRepo) UpdateInspection(ctx context.Context) (*model.Ins
 		return nil, err
 	}
 	return inspection, nil
+}
+
+// DeleteInspection repository method to delete an inspection from the database where
+// the role of deleting inspeciton from the table is given only to the inspector who created the inspection
+func (insrepo *InspectionRepo) DeleteInspection(ctx context.Context) (bool, error) {
+	inspectionID := ctx.Value("inspection_id").(uint)
+	inspectorID := ctx.Value("inspector_id").(uint)
+	cmd, err := insrepo.DB.Exec(ctx, " DELETE FROM inspections WHERE id=$1 and  inspector_id=$2 ", inspectionID, inspectorID)
+	if err != nil || cmd.RowsAffected() == 0 {
+		return false, err
+	}
+	return true, nil
+}
+
+// DoesThisVehicleWithVinNumberExists ..  method to check the presence of a vehicle inspection with
+// specified vin number
+// it is passed inside the context  >>>   variable Name : vin_number
+func (insrepo *InspectionRepo) DoesThisVehicleWithVinNumberExists(ctx context.Context) bool {
+	vinNumber := ctx.Value("vin_number").(string)
+	id := 0
+	err := insrepo.DB.QueryRow(ctx, "SELECT id FROM  inspections WHERE vin_number=$1", vinNumber).Scan(&id)
+	if err != nil || id == 0 {
+		return false
+	}
+	return true
+}
+
+// DoesThisVahicheWithLicensePlateExist ..  method to check the presence of a vehicle inspection with
+// specified vin number
+// it is passed inside the context  >>>   variable Name : vin_number
+func (insrepo *InspectionRepo) DoesThisVahicheWithLicensePlateExist(ctx context.Context) bool {
+	LicensePlate := ctx.Value("license_plate").(string)
+	id := 0
+	err := insrepo.DB.QueryRow(ctx, "SELECT id FROM  inspections WHERE license_plate=$1", LicensePlate).Scan(&id)
+	if err != nil || id == 0 {
+		return false
+	}
+	return true
 }

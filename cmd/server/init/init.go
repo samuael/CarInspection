@@ -150,6 +150,7 @@ func TakeDefaultGarageData() *model.Garage {
 			garage = &model.Garage{
 				Name: garagename,
 				Address: &model.Address{
+					ID:      1,
 					Country: country,
 					Region:  region,
 					Zone:    zone,

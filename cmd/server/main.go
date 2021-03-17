@@ -1,12 +1,15 @@
 package main
 
 import (
-	"context"
+	// "context"
+	"html/template"
 	"os"
 	"sync"
 
-	"github.com/jackc/pgx"
+	// "github.com/jackc/pgx"
+	"github.com/jackc/pgx/pgxpool"
 	"github.com/samuael/Project/CarInspection/pkg/admin"
+	"github.com/samuael/Project/CarInspection/pkg/garage"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest/auth"
 	"github.com/samuael/Project/CarInspection/pkg/http/rest/middleware"
@@ -14,6 +17,7 @@ import (
 	"github.com/samuael/Project/CarInspection/pkg/inspector"
 	"github.com/samuael/Project/CarInspection/pkg/secretary"
 	pgxstorage "github.com/samuael/Project/CarInspection/pkg/storage/pgx_storage"
+	// "github.com/samuael/Project/CarInspection/platforms/pdf"
 	"github.com/subosito/gotenv"
 )
 
@@ -22,8 +26,10 @@ func init() {
 }
 
 var once sync.Once
-var conn *pgx.Conn
+var conn *pgxpool.Pool
 var connError error
+
+var templates *template.Template
 
 func main() {
 	once.Do(func() {
@@ -31,8 +37,9 @@ func main() {
 		if connError != nil {
 			os.Exit(1)
 		}
+		templates = template.Must(template.ParseGlob(os.Getenv("PATH_TO_TEMPLATES") + "*.html"))
 	})
-	defer conn.Close(context.Background())
+	defer conn.Close()
 
 	authenticator := auth.NewAuthenticator()
 	rules := middleware.NewRules(authenticator)
@@ -41,15 +48,17 @@ func main() {
 	secretaryrepo := pgxstorage.NewSecretaryRepo(conn)
 	inspectorrepo := pgxstorage.NewInspectorRepo(conn)
 	inspectionrepo := pgxstorage.NewInspectionRepo(conn)
+	garagerepo := pgxstorage.NewGarageRepo(conn)
 
+	garageservice := garage.NewGarageService(garagerepo)
 	adminservice := admin.NewAdminService(adminrepo)
 	secretaryservice := secretary.NewSecretaryService(secretaryrepo)
 	inspectorservice := inspector.NewInspectorService(inspectorrepo)
 	inspectionservice := inspection.NewInspectionService(inspectionrepo)
 
-	inspectionhandler := rest.NewInspectionHandler(inspectionservice)
+	inspectionhandler := rest.NewInspectionHandler(inspectionservice, templates, inspectorservice, garageservice)
 	inspectorhadnler := rest.NewInspectorHandler(authenticator, inspectorservice)
 	secretaryhandler := rest.NewSecretaryHandler(authenticator, secretaryservice)
-	adminhandler := rest.NewAdminHandler(authenticator, adminservice)
-	rest.Route(rules, adminhandler, secretaryhandler, inspectorhadnler , inspectionhandler )
+	adminhandler := rest.NewAdminHandler(authenticator, adminservice, secretaryservice, inspectorservice)
+	rest.Route(rules, adminhandler, secretaryhandler, inspectorhadnler, inspectionhandler)
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	// "strconv"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
@@ -234,3 +235,19 @@ InvalidUsernameOrPassword:
 		return
 	}
 }
+
+
+
+// DeleteSecretary ....  method to delete a secretary 
+// METHOD : DELETE 
+// INPUT  : secretary_id  <<< variable  
+// OUTPUT  : JSON 
+// AUTHORIZATION : ADMIN ONLY 
+// func (secreth *SecretaryHandler)   DeleteSecretary(response http.ResponseWriter  , request *http.Request  , params httprouter.Params ){
+// 	response.Header().Set("Content-Type", "application")
+// 	ctx := request.Context()
+// 	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
+
+// 	secretaryID := strconv.Atoi(request.FormValue("secretary_id"))
+	
+// }

@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jackc/pgx"
+	// "github.com/jackc/pgx"
+	"github.com/jackc/pgx/pgxpool"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
+	"github.com/samuael/Project/CarInspection/pkg/constants/state"
 	"github.com/samuael/Project/CarInspection/pkg/inspector"
 )
 
@@ -16,11 +18,11 @@ import (
 
 // InspectorRepo ... returning an Inspector Repository
 type InspectorRepo struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
 // NewInspectorRepo returning a repository at the top of pgx postgres repository.
-func NewInspectorRepo(conn *pgx.Conn) inspector.IInspectorRepo {
+func NewInspectorRepo(conn *pgxpool.Pool) inspector.IInspectorRepo {
 	return &InspectorRepo{
 		DB: conn,
 	}
@@ -83,4 +85,157 @@ func (insorrepo *InspectorRepo) InspectorByEmail(ctx context.Context) (*model.In
 	} else {
 		return nil, err
 	}
+}
+
+// ChangePassword (ctx context.Context) (bool, error)
+func (insorrepo *InspectorRepo) ChangePassword(ctx context.Context) (bool, error) {
+	id := ctx.Value("user_id").(uint)
+	password := ctx.Value("password").(string)
+	cmd, err := insorrepo.DB.Exec(ctx, "UPDATE inspectors SET password =$1 WHERE id=$2", password, id)
+	if err != nil || cmd.RowsAffected() == 0 {
+		if err != nil {
+			return false, err
+		}
+		return false, nil
+	}
+	return true, nil
+}
+
+// GetInspectionsByInspectorID   method returning the list of inspections registered by the user whose ID is specified in the
+// context value
+func (insorrepo *InspectorRepo) GetInspectionsByInspectorID(ctx context.Context) ([]*model.Inspection, error) {
+	inspectorID := ctx.Value("inspector_id").(uint)
+
+	inspections := []*model.Inspection{}
+
+	// seelcting multiple inspections using the QueryRows Method of golang
+	colmns, er := insorrepo.DB.Query(ctx, "SELECT * FROM  inspections WHERE inspector_id=$1", inspectorID)
+	if er != nil {
+		return inspections, er
+	}
+	for colmns.Next() {
+		handbrake := 0
+		steeringSystem := 0
+		brakeSystem := 0
+		seatBelt := 0
+		doorAndWindow := 0
+		dashBoardLight := 0
+		windshield := 0
+		baggageDoorWindow := 0
+		gearBox := 0
+		shockAbsorber := 0
+		frontHighAndLowBeamLight := 0
+		rearLightAndBrakeLight := 0
+		wiperOperation := 0
+		carHorn := 0
+		sideMirror := 0
+		generalBodyCondition := 0
+		// fetch the Inspection From the database
+		inspection := &model.Inspection{}
+
+		if errs := colmns.Scan(
+			&(inspection.ID),
+			&(inspection.GarageID),
+			&(inspection.InspectorID),
+			&(inspection.Drivername),
+			&(inspection.VehicleModel),
+			&(inspection.VehicleYear),
+			&(inspection.VehicleMake),
+			&(inspection.VehicleColor),
+			&(inspection.LicensePlate),
+			&(inspection.FrontImage),
+			&(inspection.LeftSideImage),
+			&(inspection.RightSideImage),
+			&(inspection.BackImage),
+			&(inspection.SignatureImage),
+			&(inspection.VinNumber),
+			&handbrake,
+			&steeringSystem,
+			&brakeSystem,
+			&seatBelt,
+			&doorAndWindow,
+			&dashBoardLight,
+			&windshield,
+			&baggageDoorWindow,
+			&gearBox,
+			&shockAbsorber,
+			&frontHighAndLowBeamLight,
+			&rearLightAndBrakeLight,
+			&wiperOperation,
+			&carHorn,
+			&sideMirror,
+			&generalBodyCondition,
+			&(inspection.DriverPerformance),
+			&(inspection.Balancing),
+			&(inspection.Hazard),
+			&(inspection.SignalLightUsage),
+			&(inspection.Passed)); errs == nil {
+			inspection.HandBrake = insorrepo.GetFunctionalityResultByID(ctx, handbrake)
+			inspection.SteeringSystem = insorrepo.GetFunctionalityResultByID(ctx, steeringSystem)
+			inspection.BrakeSystem = insorrepo.GetFunctionalityResultByID(ctx, brakeSystem)
+			inspection.SeatBelt = insorrepo.GetFunctionalityResultByID(ctx, seatBelt)
+			inspection.DoorAndWindow = insorrepo.GetFunctionalityResultByID(ctx, doorAndWindow)
+			inspection.DashBoardLight = insorrepo.GetFunctionalityResultByID(ctx, dashBoardLight)
+			inspection.WindShield = insorrepo.GetFunctionalityResultByID(ctx, windshield)
+			inspection.BaggageDoorWindow = insorrepo.GetFunctionalityResultByID(ctx, baggageDoorWindow)
+			inspection.GearBox = insorrepo.GetFunctionalityResultByID(ctx, gearBox)
+			inspection.ShockAbsorber = insorrepo.GetFunctionalityResultByID(ctx, shockAbsorber)
+			inspection.FrontHighAndLowBeamLight = insorrepo.GetFunctionalityResultByID(ctx, frontHighAndLowBeamLight)
+			inspection.RearLightAndBrakeLight = insorrepo.GetFunctionalityResultByID(ctx, rearLightAndBrakeLight)
+			inspection.WiperOperation = insorrepo.GetFunctionalityResultByID(ctx, wiperOperation)
+			inspection.CarHorn = insorrepo.GetFunctionalityResultByID(ctx, carHorn)
+			inspection.SideMirrors = insorrepo.GetFunctionalityResultByID(ctx, sideMirror)
+			inspection.GeneralBodyCondition = insorrepo.GetFunctionalityResultByID(ctx, generalBodyCondition)
+			inspections = append(inspections, inspection)
+		}
+	}
+	return inspections, nil
+}
+
+// GetFunctionalityResult instance by ID
+// returning functionality result value searching from the possible Functionality Results list in the
+// state package and if it doesn't found any it will search from the database
+// the parameter is the ID of the Functionality results table instance
+// if it doesn't find any from either of them it will return a nil instance
+func (insorrepo *InspectorRepo) GetFunctionalityResultByID(ctx context.Context, ID int) *model.FunctionalityResult {
+	//  looping over the functionality results if found return the instance
+	for _, fr := range state.FunctionalityResultInstances {
+		if fr.ID == uint(ID) {
+			return fr
+		}
+	}
+	// search from the database using the ID
+	funcres := &model.FunctionalityResult{}
+	err := insorrepo.DB.QueryRow(ctx, "SELECT * FROM  functionality_results WHERE id=$1", ID).Scan(&(funcres.ID), &(funcres.Result), &(funcres.Reason))
+	if err != nil {
+		println(err.Error())
+		return nil
+	}
+	return funcres
+
+}
+
+// GetInspectoryID (ctx context.Context) (*model.Inspection, error)
+func (insorrepo *InspectorRepo) GetInspectorID(ctx context.Context) (*model.Inspector, error) {
+	inspectorID, val := ctx.Value("inspector_id").(uint)
+	if !val {
+		return nil, errors.New("Internal Error ")
+	}
+	inspector := &model.Inspector{}
+	era := insorrepo.DB.QueryRow(ctx, "SELECT * FROM inspectors WHERE id=$1", inspectorID).Scan(
+		&(inspector.ID),
+		&(inspector.Email),
+		&(inspector.Firstname),
+		&(inspector.Middlename),
+		&(inspector.Lastname),
+		&(inspector.Password),
+		&(inspector.Imageurl),
+		&(inspector.GarageID),
+		&(inspector.Createdby))
+
+	if era != nil {
+		println(era.Error())
+		return nil, era
+	}
+	return inspector, nil
 }

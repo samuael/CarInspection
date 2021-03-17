@@ -17,6 +17,7 @@ type Inspection struct {
 	BackImage                string               `json:"back_image"`
 	SignatureImage           string               `json:"signature"`
 	VinNumber                string               `json:"vin_number"`
+	
 	HandBrake                *FunctionalityResult `json:"hand_brake"  					gorm:"hand_brake,	foreignkey:HandBrakeRefer"`
 	SteeringSystem           *FunctionalityResult `json:"steering_system"  				gorm:"steering_system,	foreignkey:SteeringSystemRefer"`
 	BrakeSystem              *FunctionalityResult `json:"brake_system" 					gorm:"brake_system,	foreignkey:BrakeSystemRefer"`

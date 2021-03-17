@@ -23,6 +23,15 @@ var Authorities = Authority{
 	"/api/inspection/": &Permission{
 		Roles: []string{INSPECTOR},
 	},
+	"/api/inspection/images/": &Permission{
+		Roles: []string{INSPECTOR},
+	},
+	"/api/password/new/": &Permission{
+		Roles: []string{INSPECTOR, ADMIN, SECRETARY},
+	},
+	"/api/inspector/myinspections/": &Permission{
+		Roles: []string{INSPECTOR},
+	},
 	// "/api/inspector/login/": &Permission{
 	// 	Roles: []string{INSPECTOR},
 	// },

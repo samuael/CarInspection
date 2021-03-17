@@ -9,6 +9,7 @@ type Garage struct {
 
 // Address ...
 type Address struct {
+	ID      uint   `json:"id"`
 	Country string `json:"country"`
 	Region  string `json:"region"`
 	Zone    string `json:"zone"`
@@ -16,5 +17,3 @@ type Address struct {
 	City    string `json:"city"`
 	Kebele  string `json:"kebele"`
 }
-
-

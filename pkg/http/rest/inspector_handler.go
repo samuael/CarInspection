@@ -18,6 +18,7 @@ import (
 type IInspectorHandler interface {
 	CreateInspector(http.ResponseWriter, *http.Request, httprouter.Params)
 	InspectorLogin(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	GetMyInspections(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 }
 
 // InspetorHandler inspector handler for
@@ -224,4 +225,53 @@ InvalidUsernameOrPassword:
 		response.Write(helper.MarshalThis(resp))
 		return
 	}
+}
+
+// GetMyInspections  returns list of inspections that an inspector took
+/*
+	OUTPUT : JSON
+
+	{
+		"success" : true  ,
+		"message" : "succesfuly fetched -- messages "
+		"inspections" : [
+			{
+				id : 1,
+				.
+				.
+				.
+			}
+		]
+	}
+
+*/
+func (insorh *InspectorHandler) GetMyInspections(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	ctx := request.Context()
+	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
+
+	res := &struct {
+		Success     bool   `json:"success"`
+		Message     string `json:"message"`
+		Inspections []*model.Inspection
+	}{
+		Success: false,
+		Message: "",
+	}
+
+	ctx = context.WithValue(ctx, "inspector_id", uint(session.ID))
+
+	inspections, er := insorh.InspectorSer.GetInspectionsByInspectorID(ctx)
+	if er != nil || inspections == nil {
+		res.Message = "Unable to Found Inspections For Specified User!"
+		res.Success = false
+		response.WriteHeader(404)
+		res.Inspections = []*model.Inspection{}
+		response.Write(helper.MarshalThis(res))
+	}
+	res.Success = true
+	res.Inspections = inspections
+	res.Message = fmt.Sprintf(" Succesfuly Found %d  Inspections ", len(inspections))
+	response.WriteHeader(200)
+	response.Write(helper.MarshalThis(res))
 }

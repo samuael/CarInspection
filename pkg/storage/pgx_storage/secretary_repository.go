@@ -4,18 +4,18 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/pgxpool"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
 	"github.com/samuael/Project/CarInspection/pkg/secretary"
 )
 
 // SecretaryRepository ...
 type SecretaryRepository struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
 // NewSecretaryRepo returning the repository for secretary
-func NewSecretaryRepo(db *pgx.Conn) secretary.ISecretaryRepo {
+func NewSecretaryRepo(db *pgxpool.Pool) secretary.ISecretaryRepo {
 	return &SecretaryRepository{
 		DB: db,
 	}
@@ -75,4 +75,18 @@ func (secretr *SecretaryRepository) SecretaryByEmail(ctx context.Context) (*mode
 	} else {
 		return nil, err
 	}
+}
+
+// ChangePassword (ctx context.Context) (bool, error)
+func (secretr *SecretaryRepository) ChangePassword(ctx context.Context) (bool, error) {
+	id := ctx.Value("user_id").(uint)
+	password := ctx.Value("password").(string)
+	cmd, err := secretr.DB.Exec(ctx, "UPDATE secretaries SET password =$1 WHERE id=$2", password, id)
+	if err != nil || cmd.RowsAffected() == 0 {
+		if err != nil {
+			return false, err
+		}
+		return false, nil
+	}
+	return true, nil
 }

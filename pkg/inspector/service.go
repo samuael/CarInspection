@@ -10,6 +10,9 @@ type IInspectorService interface {
 	CreateInspector(context.Context) (*model.Inspector, error)
 	DoesThisEmailExist(context.Context) bool
 	InspectorByEmail(context.Context) (*model.Inspector, error)
+	ChangePassword(ctx context.Context) (bool, error)
+	GetInspectionsByInspectorID(ctx context.Context) ([]*model.Inspection, error)
+	GetInspectorID(ctx context.Context) (*model.Inspector, error)
 }
 
 // InspectorService  ...
@@ -36,4 +39,19 @@ func (inorser InspectorService) DoesThisEmailExist(ctx context.Context) bool {
 // InspectorByEmail ( context.Context ) (*model.Inspector, error )
 func (insorser InspectorService) InspectorByEmail(ctx context.Context) (*model.Inspector, error) {
 	return insorser.Repo.InspectorByEmail(ctx)
+}
+
+// ChangePassword ... method
+func (insorser *InspectorService) ChangePassword(ctx context.Context) (bool, error) {
+	return insorser.Repo.ChangePassword(ctx)
+}
+
+// GetInspectionsByInspectorID ...
+func (insorser InspectorService) GetInspectionsByInspectorID(ctx context.Context) ([]*model.Inspection, error) {
+	return insorser.Repo.GetInspectionsByInspectorID(ctx)
+}
+
+// GetInspectoryID (ctx context.Context )  (*model.Inspection , error )
+func (insorser InspectorService) GetInspectorID(ctx context.Context) (*model.Inspector, error) {
+	return insorser.Repo.GetInspectorID(ctx)
 }

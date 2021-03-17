@@ -8,4 +8,5 @@ import (
 
 type IAdminRepo interface {
 	AdminByEmail(ctx context.Context) (*model.Admin, error)
+	ChangePassword(ctx context.Context) (bool, error)
 }
