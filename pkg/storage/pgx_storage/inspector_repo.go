@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	// "github.com/jackc/pgx"
 	"github.com/jackc/pgx/pgxpool"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
 	"github.com/samuael/Project/CarInspection/pkg/constants/state"
@@ -244,7 +243,7 @@ func (insorrepo *InspectorRepo) GetInspectorByID(ctx context.Context) (*model.In
 func (insorrepo *InspectorRepo) UpdateProfileImage(ctx context.Context) error {
 	defer recover()
 	inspector := ctx.Value("inspector").(*model.Inspector)
-	cmt, era := insorrepo.DB.Exec(ctx, "UPDATE inspectors SET imageurl=$2 WHERE id=$1", inspector.ID , inspector.Imageurl)
+	cmt, era := insorrepo.DB.Exec(ctx, "UPDATE inspectors SET imageurl=$2 WHERE id=$1", inspector.ID, inspector.Imageurl)
 	if era != nil || cmt.RowsAffected() == 0 {
 		if era != nil {
 			println(era.Error())
@@ -254,12 +253,40 @@ func (insorrepo *InspectorRepo) UpdateProfileImage(ctx context.Context) error {
 	return nil
 }
 
-// DeleteInspectorByID (ctx context.Context) error 
-func (insorrepo *InspectorRepo) DeleteInspectorByID(ctx context.Context) error  {
+// DeleteInspectorByID (ctx context.Context) error
+func (insorrepo *InspectorRepo) DeleteInspectorByID(ctx context.Context) error {
 	inspectorID := ctx.Value("inspector_id").(uint)
 	cmd, era := insorrepo.DB.Exec(ctx, " DELETE FROM inspectors WHERE id=$1 ", inspectorID)
 	if era != nil || cmd.RowsAffected() == 0 {
 		return errors.New("No Rows Deleted ")
 	}
 	return nil
+}
+
+// GetInspectorsByAdminID (ctx context.Context)   ([]*model.Inspector , error)
+func (insorrepo *InspectorRepo) GetInspectorsByAdminID(ctx context.Context) ([]*model.Inspector, error) {
+	adminID := ctx.Value("admin_id").(uint)
+	columns, err := insorrepo.DB.Query(ctx, "SELECT * FROM inspectors WHERE createdby=$1", adminID)
+	if err != nil {
+		return nil, err
+	}
+	inspectors := []*model.Inspector{}
+	for columns.Next() {
+		inspector := &model.Inspector{}
+		ers := columns.Scan(
+			&(inspector.ID),
+			&(inspector.Email),
+			&(inspector.Firstname),
+			&(inspector.Middlename),
+			&(inspector.Lastname),
+			&(inspector.Password),
+			&(inspector.Imageurl),
+			&(inspector.GarageID),
+			&(inspector.Createdby),
+		)
+		if ers == nil {
+			inspectors = append(inspectors, inspector)
+		}
+	}
+	return inspectors, nil
 }

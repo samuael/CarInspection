@@ -18,6 +18,8 @@ func Route(rules middleware.Rules, adminhandler IAdminHandler, secretaryhandler 
 	router.GET("/public/", FilterDirectory(http.StripPrefix("/public/", router.NotFound)))
 
 	router.POST("/api/admin/login/", accessControl(adminhandler.AdminLogin))
+	router.GET("/api/admin/inspectors/", rules.Authorized(rules.Authenticated(accessControl(inspectorhandler.GetMyInspectors))))
+
 	router.POST("/api/inspector/login/", accessControl(inspectorhandler.InspectorLogin))
 	router.POST("/api/secretary/login/", accessControl(secretaryhandler.SecretaryLogin))
 	router.GET("/api/logout/", rules.Authenticated(accessControl(adminhandler.Logout)))
@@ -31,7 +33,7 @@ func Route(rules middleware.Rules, adminhandler IAdminHandler, secretaryhandler 
 	router.POST("/api/inspection/new/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.CreateInspection))))
 
 	router.PUT("/api/inspection/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.EditInspection))))
-	router.PUT("/api/inspection/images/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.UpdateInspectionFiles))))
+	router.PUT("/inspection/images/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.UpdateInspectionFiles))))
 	router.DELETE("/api/inspection/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.DeleteInspection))))
 	router.GET("/api/inspector/myinspections/", rules.Authorized(rules.Authenticated(accessControl(inspectorhandler.GetMyInspections))))
 	router.GET("/api/inspection/:id", rules.Authenticated(accessControl(inspectionhandler.GetInspectionByID)))

@@ -24,6 +24,7 @@ type IInspectorHandler interface {
 	GetMyInspections(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	InspectorProfileImageChange(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	DeleteInspectorByID(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	GetMyInspectors(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 }
 
 // InspetorHandler inspector handler for
@@ -393,5 +394,37 @@ func (insorh *InspectorHandler) DeleteInspectorByID(response http.ResponseWriter
 	res.Message = "Deletion was succesful!"
 	res.Success = true
 	response.WriteHeader(http.StatusOK)
+	response.Write(helper.MarshalThis(res))
+}
+
+// GetMyInspectors ... a method to get the list of inspectors the admin have created
+// METHOD : GET
+// INPUT  : --
+// OUTPUT : JSON
+// AUTHORIZATION : ADMINS ONLY
+func (insorh *InspectorHandler) GetMyInspectors(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	ctx := request.Context()
+	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
+
+	// putting the inspector ID in the context
+	ctx = context.WithValue(ctx, "admin_id", uint(session.ID))
+	inspectors, err := insorh.InspectorSer.GetInspectorsByAdminID(ctx)
+
+	res := &struct {
+		Success    bool               `json:"success"`
+		Inspectors []*model.Inspector `json:"inspectors"`
+	}{
+		Success:    false,
+		Inspectors: nil,
+	}
+	if err != nil || inspectors == nil {
+		response.WriteHeader(http.StatusNotFound)
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	response.WriteHeader(http.StatusOK)
+	res.Inspectors = inspectors
+	res.Success = true
 	response.Write(helper.MarshalThis(res))
 }

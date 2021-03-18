@@ -220,3 +220,6 @@ func (adminhr *AdminHandler) ChangePassword(response http.ResponseWriter, reques
 	res.Success = true
 	response.Write(helper.MarshalThis(res))	
 }
+
+
+// 

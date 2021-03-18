@@ -15,6 +15,7 @@ type IInspectorService interface {
 	GetInspectorByID(ctx context.Context) (*model.Inspector, error)
 	UpdateProfileImage(ctx context.Context) error
 	DeleteInspectorByID(ctx context.Context) error
+	GetInspectorsByAdminID(ctx context.Context) ([]*model.Inspector, error)
 }
 
 // InspectorService  ...
@@ -66,4 +67,9 @@ func (insorser *InspectorService) UpdateProfileImage(ctx context.Context) error 
 // DeleteInspectorByID (ctx context.Context) error
 func (insorser *InspectorService) DeleteInspectorByID(ctx context.Context) error {
 	return insorser.Repo.DeleteInspectorByID(ctx)
+}
+
+// GetInspectorsByAdminID (ctx context.Context)   ([]*model.Inspector , error)
+func (insorser *InspectorService) GetInspectorsByAdminID(ctx context.Context) ([]*model.Inspector, error) {
+	return insorser.Repo.GetInspectorsByAdminID(ctx)
 }

@@ -15,4 +15,5 @@ type IInspectorRepo interface {
 	GetInspectorByID(ctx context.Context) (*model.Inspector, error)
 	UpdateProfileImage(ctx context.Context) error 
 	DeleteInspectorByID(ctx context.Context) error 
+	GetInspectorsByAdminID(ctx context.Context)   ([]*model.Inspector , error)
 }

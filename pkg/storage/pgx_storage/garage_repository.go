@@ -30,9 +30,8 @@ func (gararepo *GarageRepository) GetGarageByID(ctx context.Context) (*model.Gar
 	addresses.zone,addresses.woreda,addresses.city,addresses.kebele,
 	garage.id , garage.name 
 	FROM garage
-	INNER JOIN addresses ON garage.id=addresses.id  WHERE garage.id=$1 ;`
-	era := gararepo.DB.QueryRow(ctx, val, garageID).Scan(
-		&(garage.ID), &(garage.Address.Country), &(garage.Address.Region), &(garage.Address.Zone), &(garage.Address.Woreda),
+	INNER JOIN addresses ON garage.id=addresses.id  WHERE garage.id=$1 ;`;
+	era := gararepo.DB.QueryRow(ctx, val, garageID).Scan( &(garage.ID), &(garage.Address.Country), &(garage.Address.Region), &(garage.Address.Zone), &(garage.Address.Woreda),
 		&(garage.Address.City), &(garage.Address.Kebele), &(garage.ID), &(garage.Name))
 	if era != nil {
 		println(era.Error())
