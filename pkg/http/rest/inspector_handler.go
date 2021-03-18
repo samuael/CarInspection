@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
@@ -19,6 +22,8 @@ type IInspectorHandler interface {
 	CreateInspector(http.ResponseWriter, *http.Request, httprouter.Params)
 	InspectorLogin(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	GetMyInspections(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	InspectorProfileImageChange(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	DeleteInspectorByID(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 }
 
 // InspetorHandler inspector handler for
@@ -273,5 +278,120 @@ func (insorh *InspectorHandler) GetMyInspections(response http.ResponseWriter, r
 	res.Inspections = inspections
 	res.Message = fmt.Sprintf(" Succesfuly Found %d  Inspections ", len(inspections))
 	response.WriteHeader(200)
+	response.Write(helper.MarshalThis(res))
+}
+
+// InspectorProfileImageChange (response http.ResponseWriter, request *http.Request, params httprouter.Params)
+// METHOD : PUT
+// INPUT : MULTIPART FORM DATA
+// OUTPUT : JSON of the inspector Profile
+// INPUT PARAMETER NAME : profile_image
+func (insorh *InspectorHandler) InspectorProfileImageChange(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	ctx := request.Context()
+	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
+	// Since i have the inspector Session i don't have to check the presence of the Inspector
+	// getting the image files
+	res := &struct {
+		Success   bool             `json:"success"`
+		Inspector *model.Inspector `json:"inspector"`
+	}{
+		Success: false,
+	}
+	// parsing the formdata since it is a multipart form data
+	request.ParseMultipartForm(999999999999)
+	file, header, era := request.FormFile("image")
+	if era != nil || file == nil || header == nil {
+		response.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	// get the inspector Instance from the database
+	ctx = context.WithValue(ctx, "inspector_id", uint(session.ID))
+	inspector, era := insorh.InspectorSer.GetInspectorByID(ctx)
+	if era != nil || inspector == nil {
+		response.WriteHeader(http.StatusNotModified)
+		return
+	}
+	// "public/inspectorsImage/"+
+	randomFilename := helper.GenerateRandomString(5, helper.CHARACTERS) + "." + helper.GetExtension(header.Filename)
+	newFile, er := os.Create(os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY") + "inspectors/" + randomFilename)
+	if er != nil {
+		println(er.Error())
+		response.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer newFile.Close()
+	_, er = io.Copy(newFile, file)
+	if er != nil {
+		println(er.Error())
+		response.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	oldImage := inspector.Imageurl
+	inspector.Imageurl = "public/inspectors/" + randomFilename
+	ctx = context.WithValue(ctx, "inspector", inspector)
+	er = insorh.InspectorSer.UpdateProfileImage(ctx)
+
+	if er != nil {
+		println(er.Error())
+		response.WriteHeader(http.StatusInternalServerError)
+		os.Remove(os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY") + "inspectors/" + randomFilename)
+		return
+	}
+	os.Remove(os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY") + strings.TrimPrefix(oldImage, "public/"))
+	response.WriteHeader(200)
+	res.Success = true
+	res.Inspector = inspector
+	response.Write(helper.MarshalThis(res))
+}
+
+// DeleteInspectorByID (response http.ResponseWriter, request *http.Request, params httprouter.Params)
+func (insorh *InspectorHandler) DeleteInspectorByID(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	ctx := request.Context()
+	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
+	// Since i have the inspector Session i don't have to check the presence of the Inspector
+	// getting the image files
+	res := &struct {
+		Success     bool   `json:"success"`
+		Message     string `json:"message"`
+		InspectorID uint   `json:"inspector_id"`
+	}{
+		Success: false,
+	}
+	// Getting the inspector ID from the request
+	inspectorID, era := strconv.Atoi(request.FormValue("inspector_id"))
+	if era != nil || inspectorID == 0 {
+		response.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	res.InspectorID = uint(inspectorID)
+
+	ctx = context.WithValue(ctx, "inspector_id", uint(inspectorID))
+	inspector, era := insorh.InspectorSer.GetInspectorByID(ctx)
+	if era != nil {
+		response.WriteHeader(http.StatusNotFound)
+		res.Message = " Inspector With Specified ID not found!"
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	if session.GarageID != inspector.GarageID {
+		res.Message = fmt.Sprintf("You are Not Authorized to delete Inspector with ID ", inspectorID)
+		response.WriteHeader(http.StatusUnauthorized)
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	// deleting the secretary
+	era = insorh.InspectorSer.DeleteInspectorByID(ctx)
+	if era != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		res.Message = os.Getenv("INTERNAL_SERVER_ERROR")
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	res.Message = "Deletion was succesful!"
+	res.Success = true
+	response.WriteHeader(http.StatusOK)
 	response.Write(helper.MarshalThis(res))
 }

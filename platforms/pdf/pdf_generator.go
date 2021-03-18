@@ -1,8 +1,6 @@
 package pdf
 
 import (
-	"fmt"
-	"log"
 	"os"
 
 	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
@@ -13,7 +11,6 @@ import (
 func GetThePdf(fileDirectory string) string {
 	pdfg, erra := wkhtmltopdf.NewPDFGenerator()
 	if erra != nil {
-		fmt.Println("Error While Generating the Pdf ")
 		return ""
 	}
 	pdfg.Dpi.Set(30)
@@ -31,13 +28,11 @@ func GetThePdf(fileDirectory string) string {
 	pdfCreationError := pdfg.Create()
 	if pdfCreationError != nil {
 		println(pdfCreationError.Error())
-		fmt.Println("Error while Creating the pdf file ")
 		return ""
 	}
 	// Generating Random Name to Be Output Name
 	writingError := pdfg.WriteFile(homepath)
 	if writingError != nil {
-		log.Println("Error While Writing the File to The Directory Name ", homepath)
 		return ""
 	}
 	os.Remove(fileDirectory)

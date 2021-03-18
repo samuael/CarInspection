@@ -13,4 +13,6 @@ type ISecretaryRepo interface {
 	DoesThisEmailExist(ctx context.Context) bool
 	SecretaryByEmail(context.Context) (*model.Secretary, error)
 	ChangePassword(ctx context.Context) (bool, error)
+	GetSecretaryByID(ctx context.Context) (*model.Secretary, error)
+	DeleteSecretaryByID(ctx context.Context ) error 
 }

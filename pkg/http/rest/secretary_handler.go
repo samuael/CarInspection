@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+
 	// "strconv"
 
 	"github.com/julienschmidt/httprouter"
@@ -20,6 +22,7 @@ import (
 type ISecretaryHandler interface {
 	Create(http.ResponseWriter, *http.Request, httprouter.Params)
 	SecretaryLogin(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	DeleteSecretary(response http.ResponseWriter, request *http.Request, parms httprouter.Params)
 }
 
 // SecretaryHandler ...
@@ -236,18 +239,70 @@ InvalidUsernameOrPassword:
 	}
 }
 
+// DeleteSecretary (response http.ResponseWriter  , request http.Request  , parms httprouter.Params)
+// METHOD : DELETE
+// INPUT  : INSPECTOR ID AS A PARAMETER
+// OUTPUT  : JSON
+// AUTHORIZATION : INSPECTOR ONLY
+func (secreth *SecretaryHandler) DeleteSecretary(response http.ResponseWriter, request *http.Request, parms httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	secretaryID, era := strconv.Atoi(request.FormValue("secretary_id"))
+	ctx := request.Context()
+	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
 
+	if era != nil || secretaryID == 0 {
+		response.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	res := &struct {
+		Success     bool   `json:"success"`
+		Message     string `json:"message"`
+		SecretaryID uint   `json:"secretary_id"`
+	}{
+		Success:     false,
+		SecretaryID: uint(secretaryID),
+	}
+	// Is The Admin From Same Garage with secretary
+	// chacking whether the admin is from the same garage or not
+	// gettingTheSecretary
+	ctx = context.WithValue(ctx, "secretary_id", uint(secretaryID))
+	secretary, era := secreth.SecretSer.GetSecretaryByID(ctx)
+	if era != nil {
+		response.WriteHeader(http.StatusNotFound)
+		res.Message = " Secretary With Specified ID not found!"
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	if session.GarageID != secretary.GarageID {
+		res.Message = fmt.Sprintf("You are Not Authorized to delete Secretary with ID ", secretaryID)
+		response.WriteHeader(http.StatusUnauthorized)
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	// deleting the secretary
+	era = secreth.SecretSer.DeleteSecretaryByID(ctx)
+	if era != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		res.Message = os.Getenv("INTERNAL_SERVER_ERROR")
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	res.Message = "Deletion was succesful!"
+	res.Success = true
+	response.WriteHeader(http.StatusOK)
+	response.Write(helper.MarshalThis(res))
+}
 
-// DeleteSecretary ....  method to delete a secretary 
-// METHOD : DELETE 
-// INPUT  : secretary_id  <<< variable  
-// OUTPUT  : JSON 
-// AUTHORIZATION : ADMIN ONLY 
+// DeleteSecretary ....  method to delete a secretary
+// METHOD : DELETE
+// INPUT  : secretary_id  <<< variable
+// OUTPUT  : JSON
+// AUTHORIZATION : ADMIN ONLY
 // func (secreth *SecretaryHandler)   DeleteSecretary(response http.ResponseWriter  , request *http.Request  , params httprouter.Params ){
 // 	response.Header().Set("Content-Type", "application")
 // 	ctx := request.Context()
 // 	session := ctx.Value(os.Getenv("CAR_INSPECTION_COOKIE_NAME")).(*model.Session)
 
 // 	secretaryID := strconv.Atoi(request.FormValue("secretary_id"))
-	
+
 // }

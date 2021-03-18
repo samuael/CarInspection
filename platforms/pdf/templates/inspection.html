@@ -14,6 +14,8 @@
         </div>
     </div>
 
+    {{$assets :=.AssetsDirectory}}
+    {{$profilePic := .InspectorImage}}
     {{with .Inspector }}
     <div class="container   ">
         <caption>
@@ -26,8 +28,9 @@
                   <th>Country</th>
                 </tr> -->
             <tr>
-                <td> <img style="border-radius: 50%;height: 100px;width:100px;"
-                        src="Screenshot from 2021-03-05 09-40-45.png" alt=""> </td>
+                <td> <img style="border-radius: 50%;height: 80px;width:80px;"
+                        src="{{if .Imageurl }}{{ $profilePic }}{{else}}{{$assets}}avatar-1577909_1280.webp{{end}}" alt="">
+                </td>
                 <td> Full Name : {{ .Firstname }} {{ .Middlename }} {{ .Lastname }}</td>
             </tr>
         </table>
@@ -42,7 +45,6 @@
         </caption>
         <table>
             <tr>
-                <td>ID : <small>0</small> </td>
                 <td> Name : {{ .Name }} </td>
             </tr>
         </table>
@@ -57,9 +59,6 @@
             <strong> Inspection Info </strong>
         </caption>
         <table>
-            <tr>
-                <td>ID : <small>0</small> </td>
-            </tr>
             <tr>
                 <td> <strong> Driver Name : </strong> {{ .Drivername }} </td>
             </tr>
@@ -92,7 +91,7 @@
             {{with .HandBrake }}
             <tr>
                 <td> Hand Brake </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -101,7 +100,7 @@
             {{with .SteeringSystem}}
             <tr>
                 <td> Steering System </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -110,8 +109,8 @@
             {{with .BrakeSystem}}
             <tr>
                 <td> Brake System </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
-                        "PASS" {{else }} "FAILED" {{end}}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
+                        "PASS" {{else }} FAILED {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
             </tr>
@@ -119,8 +118,8 @@
             {{with .SeatBelt }}
             <tr>
                 <td> Seat Belt </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
-                        "PASS" {{else }} "FAILED" {{end}}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
+                        "PASS" {{else }} FAILED {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
             </tr>
@@ -128,16 +127,16 @@
             {{with .DoorAndWindow }}
             <tr>
                 <td> Door And Window </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
-                        "PASS" {{else }} "FAILED" {{end}}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
+                        "PASS" {{else }} FAILED {{end}}
                     </button> </td>
-                <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
+                <td>{{if .Reason}} {{.Reason}} {{else }} PASSED{{end}} </td>
             </tr>
             {{end }}
             {{with .DashBoardLight}}
             <tr>
                 <td> Dash Board Light </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -146,7 +145,7 @@
             {{with .WindShield}}
             <tr>
                 <td> Wind Shield </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -155,7 +154,7 @@
             {{with .BaggageDoorWindow }}
             <tr>
                 <td> Baggage Door Window </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -164,7 +163,7 @@
             {{with .GearBox }}
             <tr>
                 <td> Gear Box </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -173,7 +172,7 @@
             {{with .ShockAbsorber }}
             <tr>
                 <td> Shock Absorber </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -182,7 +181,7 @@
             {{with .FrontHighAndLowBeamLight }}
             <tr>
                 <td>Front High And Low Beam Light </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -191,7 +190,7 @@
             {{with .RearLightAndBrakeLight }}
             <tr>
                 <td> Rear Light And Brake Light </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -200,7 +199,7 @@
             {{with .WiperOperation }}
             <tr>
                 <td> Wiper Operation </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -209,7 +208,7 @@
             {{with .CarHorn}}
             <tr>
                 <td> Car Horn </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -218,7 +217,7 @@
             {{with .SideMirrors}}
             <tr>
                 <td> Side Mirrors </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}>{{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}>{{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
                 <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
@@ -227,17 +226,17 @@
             {{with .GeneralBodyCondition }}
             <tr>
                 <td> General Body Condition </td>
-                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if .Result }}
+                <td> <button {{if .Result }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if .Result }}
                         "PASS" {{else }} "FAILED" {{end}}
                     </button> </td>
-                <td>{{if .Reason}} {{.Reason}} {{else }} "PASS"{{end}} </td>
+                <td>{{if .Reason}} {{.Reason}} {{else }} PASSED {{end}} </td>
             </tr>
             {{end }}
             {{with .DriverPerformance }}
             <tr>
                 <td> Driver Performance </td>
-                <td> <button {{if . }} class="btn-success" {{else }} class="btn-success" {{end}}> {{if . }} "PASS"
-                        {{else }} "FAILED" {{end}} </button>
+                <td> <button {{if . }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if . }} PASSED
+                        {{else }} FAILED {{end}} </button>
                 </td>
                 <td> {{if . }} PASSED {{else }} FAILED {{end}}</td>
             </tr>
@@ -245,24 +244,31 @@
             {{with .Balancing }}
             <tr>
                 <td> Balancing </td>
-                <td> <button class="btn-success"> {{if . }} "PASS" {{else }} "FAILED" {{end}} </button> </td>
-                <td>Italy</td>
+                <td> <button {{if . }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if . }} PASS {{else}} FAILED {{end}} </button> </td>
+                <td> {{if . }} PASSED {{else }} FAILED {{end}}</td>
             </tr>
             {{end }}
             {{with .Hazard }}
             <tr>
                 <td> Hazard </td>
-                <td> <button class="btn-success"> {{if . }} "PASS" {{else }} "FAILED" {{end}} </button> </td>
-                <td>Italy</td>
+                <td> <button {{if . }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if . }} PASSED {{else}} FAILED {{end}} </button> </td>
+                <td> {{if . }} PASSED {{else }} FAILED {{end}}</td>
             </tr>
             {{end }}
-            {{with .SignalLightUsage  }}
+            {{with .SignalLightUsage }}
             <tr>
                 <td> Signal Light Usage </td>
-                <td> <button class="btn-success"> {{if . }} "PASS" {{else }} "FAILED" {{end}} </button> </td>
-                <td>Italy</td>
+                <td> <button {{if . }} class="btn-success" {{else }} class="btn-danger" {{end}}> {{if . }} PASSED {{else}} FAILED {{end}} </button> </td>
+                <td> {{if . }} PASSED {{else }} FAILED {{end}}</td>
             </tr>
             {{end }}
+            <tr>
+                <td> </td>
+                <td> <button style="padding:30px;" {{if .Passed }} class="btn-success" {{else }} class="btn-danger"
+                        {{end}}> {{if .Passed }} Vehicle Passed Test {{else }} Vehicle Failed Test {{end}} </button>
+                </td>
+                <td> </td>
+            </tr>
         </table>
     </div>
     {{end}}

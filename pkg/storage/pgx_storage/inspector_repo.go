@@ -216,7 +216,7 @@ func (insorrepo *InspectorRepo) GetFunctionalityResultByID(ctx context.Context, 
 }
 
 // GetInspectoryID (ctx context.Context) (*model.Inspection, error)
-func (insorrepo *InspectorRepo) GetInspectorID(ctx context.Context) (*model.Inspector, error) {
+func (insorrepo *InspectorRepo) GetInspectorByID(ctx context.Context) (*model.Inspector, error) {
 	inspectorID, val := ctx.Value("inspector_id").(uint)
 	if !val {
 		return nil, errors.New("Internal Error ")
@@ -238,4 +238,28 @@ func (insorrepo *InspectorRepo) GetInspectorID(ctx context.Context) (*model.Insp
 		return nil, era
 	}
 	return inspector, nil
+}
+
+// UpdateProfileImage (ctx context.Context) error
+func (insorrepo *InspectorRepo) UpdateProfileImage(ctx context.Context) error {
+	defer recover()
+	inspector := ctx.Value("inspector").(*model.Inspector)
+	cmt, era := insorrepo.DB.Exec(ctx, "UPDATE inspectors SET imageurl=$2 WHERE id=$1", inspector.ID , inspector.Imageurl)
+	if era != nil || cmt.RowsAffected() == 0 {
+		if era != nil {
+			println(era.Error())
+		}
+		return errors.New(" ERRROR : DB Error ... ")
+	}
+	return nil
+}
+
+// DeleteInspectorByID (ctx context.Context) error 
+func (insorrepo *InspectorRepo) DeleteInspectorByID(ctx context.Context) error  {
+	inspectorID := ctx.Value("inspector_id").(uint)
+	cmd, era := insorrepo.DB.Exec(ctx, " DELETE FROM inspectors WHERE id=$1 ", inspectorID)
+	if era != nil || cmd.RowsAffected() == 0 {
+		return errors.New("No Rows Deleted ")
+	}
+	return nil
 }

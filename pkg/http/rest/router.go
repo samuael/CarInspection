@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 	_ "github.com/samuael/Project/CarInspection/api"
@@ -14,58 +14,56 @@ import (
 func Route(rules middleware.Rules, adminhandler IAdminHandler, secretaryhandler ISecretaryHandler, inspectorhandler IInspectorHandler, inspectionhandler IInspectionHandler) http.Handler {
 	router := httprouter.New()
 
-	router.POST("/api/admin/login/", adminhandler.AdminLogin)
-	router.POST("/api/inspector/login/", inspectorhandler.InspectorLogin)
-	router.POST("/api/secretary/login/", secretaryhandler.SecretaryLogin)
+	router.NotFound = http.StripPrefix("/public/", http.FileServer(http.Dir(os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY"))))
+	router.GET("/public/", FilterDirectory(http.StripPrefix("/public/", router.NotFound)))
 
-	router.GET("/api/logout/", rules.Authenticated(adminhandler.Logout))
+	router.POST("/api/admin/login/", accessControl(adminhandler.AdminLogin))
+	router.POST("/api/inspector/login/", accessControl(inspectorhandler.InspectorLogin))
+	router.POST("/api/secretary/login/", accessControl(secretaryhandler.SecretaryLogin))
+	router.GET("/api/logout/", rules.Authenticated(accessControl(adminhandler.Logout)))
 
-	router.POST("/api/secretary/new/", rules.Authorized(rules.Authenticated(secretaryhandler.Create)))
-	router.POST("/api/inspector/new/", rules.Authorized(rules.Authenticated(inspectorhandler.CreateInspector)))
-	router.POST("/api/inspection/new/", rules.Authorized(rules.Authenticated(inspectionhandler.CreateInspection)))
+	router.DELETE("/api/secretary/", rules.Authorized(rules.Authenticated(accessControl(secretaryhandler.DeleteSecretary))))
+	router.POST("/api/secretary/new/", rules.Authorized(rules.Authenticated(accessControl(secretaryhandler.Create))))
 
-	router.PUT("/api/inspection/", rules.Authorized(rules.Authenticated(inspectionhandler.EditInspection)))
-	router.PUT("/api/inspection/images/", rules.Authorized(rules.Authenticated(inspectionhandler.UpdateInspectionFiles)))
-	router.DELETE("/api/inspection/", rules.Authorized(rules.Authenticated(inspectionhandler.DeleteInspection)))
-	router.GET("/api/inspector/myinspections/", rules.Authorized(rules.Authenticated(inspectorhandler.GetMyInspections)))
-	router.GET("/api/inspection/:id", rules.Authenticated(inspectionhandler.GetInspectionByID))
-	router.GET("/inspection/report/:id", rules.Authenticated(inspectionhandler.GetInspectionAsPDF))
+	router.DELETE("/api/inspector/", accessControl(inspectorhandler.DeleteInspectorByID))
+	router.POST("/api/inspector/new/", rules.Authorized(rules.Authenticated(accessControl(inspectorhandler.CreateInspector))))
+	router.PUT("/inspector/profile/image/new/", rules.Authorized(rules.Authenticated(accessControl(inspectorhandler.InspectorProfileImageChange))))
+	router.POST("/api/inspection/new/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.CreateInspection))))
 
-	router.PUT("/api/password/new/", rules.Authorized(rules.Authenticated(adminhandler.ChangePassword)))
+	router.PUT("/api/inspection/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.EditInspection))))
+	router.PUT("/api/inspection/images/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.UpdateInspectionFiles))))
+	router.DELETE("/api/inspection/", rules.Authorized(rules.Authenticated(accessControl(inspectionhandler.DeleteInspection))))
+	router.GET("/api/inspector/myinspections/", rules.Authorized(rules.Authenticated(accessControl(inspectorhandler.GetMyInspections))))
+	router.GET("/api/inspection/:id", rules.Authenticated(accessControl(inspectionhandler.GetInspectionByID)))
+	router.GET("/inspection/report/:id", rules.Authenticated(accessControl(inspectionhandler.GetInspectionAsPDF)))
+
+	router.GET("/api/inspections/search/", rules.Authenticated(accessControl(inspectionhandler.SearchInspections)))
+	router.GET("/api/inspections/search/:inspectorID", rules.Authenticated(accessControl(inspectionhandler.SearchInspections)))
+
+	router.PUT("/api/password/new/", rules.Authorized(rules.Authenticated(accessControl(adminhandler.ChangePassword))))
 
 	http.ListenAndServe(":8080", router)
 	return router
 }
 
-func accessControl(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func accessControl(h httprouter.Handle) httprouter.Handle {
+	return httprouter.Handle(func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS,PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type")
 
 		if r.Method == "OPTIONS" {
 			return
 		}
-
-		h.ServeHTTP(w, r)
+		h(w, r, params)
 	})
 }
 
-func respHandler(h func(http.ResponseWriter, *http.Request) (interface{}, int, error)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data, status, err := h(w, r)
-		if err != nil {
-			data = struct {
-				Error string `json: "error"`
-			}{
-				Error: err.Error(),
-			}
+func FilterDirectory(next http.Handler) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
-		err = json.NewEncoder(w).Encode(data)
-		if err != nil {
-			log.Printf("could not encode response to output: %v", err)
-		}
+		next.ServeHTTP(w, r)
 	}
 }

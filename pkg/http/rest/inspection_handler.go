@@ -32,6 +32,7 @@ type IInspectionHandler interface {
 	DeleteInspection(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	GetInspectionByID(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	GetInspectionAsPDF(response http.ResponseWriter, request *http.Request, params httprouter.Params)
+	SearchInspections(response http.ResponseWriter, request *http.Request, params httprouter.Params)
 	// GetInspections(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	// AddInspection(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 	// DeleteInspection(w http.ResponseWriter, r *http.Request, params httprouter.Params)
@@ -937,38 +938,40 @@ func (h *InspectionHandler) GetInspectionAsPDF(response http.ResponseWriter, req
 	ctx = context.WithValue(ctx, "inspection_id", uint(inspectionID))
 	inspection, era := h.InspectionSer.GetInspectionByID(ctx)
 	if era != nil || inspection == nil {
-		println("Inspection Not Found ")
 		response.WriteHeader(http.StatusNotFound)
 		return
 	}
 	ctx = context.WithValue(ctx, "inspector_id", inspection.InspectorID)
-	inspector, era := h.InspectorSer.GetInspectorID(ctx)
+	inspector, era := h.InspectorSer.GetInspectorByID(ctx)
 	if era != nil || inspector == nil {
-		println("Inspector Not Found ")
 		response.WriteHeader(http.StatusNotFound)
 		return
 	}
 	ctx = context.WithValue(ctx, "garage_id", uint(inspection.GarageID))
 	garage, era := h.GarageSer.GetGarageByID(ctx)
 	if era != nil || garage == nil {
-		println("Garage Not Found ")
 		response.WriteHeader(http.StatusNotFound)
 		return
 	}
-
+	imageToAssetsDirectory := ""
+	if inspector.Imageurl != "" {
+		imageToAssetsDirectory = os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY") +"inspectors/"+ func() string {
+			return strings.Split(inspector.Imageurl, "/")[len(strings.Split(inspector.Imageurl, "/"))-1]
+		}()
+	}
 	in := &struct {
+		InspectorImage  string
 		AssetsDirectory string
 		Garage          *model.Garage
 		Inspection      *model.Inspection
 		Inspector       *model.Inspector
 	}{
-		AssetsDirectory: os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY"),
+		InspectorImage:  imageToAssetsDirectory,
+		AssetsDirectory: os.Getenv("PATH_TO_TEMPLATES"),
 		Garage:          garage,
 		Inspection:      inspection,
 		Inspector:       inspector,
 	}
-	print(in)
-
 	fileDirectory := os.Getenv("CAR_INSPECTION_ASSETS_DIRECTORY") + "html/" + helper.GenerateRandomString(5, helper.CHARACTERS) + ".html"
 	// craete file to save the image file
 	zhtml, er := os.Create(fileDirectory)
@@ -994,5 +997,61 @@ func (h *InspectionHandler) GetInspectionAsPDF(response http.ResponseWriter, req
 		response.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	defer pdfFile.Close()
+	response.Header().Set("Content-Type", "application/pdf")
 	io.Copy(response, pdfFile)
+	// os.Remove(pdfFileDirectory)
+}
+
+// SearchInspection  returning a list of inspections that matches the specified searching parameters
+// METHOD : GET
+// INPUT : PARAMS
+// OUTPUT : JSON
+// PARAMETERS  license_plate  , driver_name  , vin_number , offset , limit , inspector_id
+// if the offset and limit are not specified the server will respond the first 10 inspections that matches the given request
+func (h *InspectionHandler) SearchInspections(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	response.Header().Set("Content-Type", "application/json")
+	licensePlate := request.FormValue("license_plate")
+	vinNumber := request.FormValue("vin_number")
+	driverName := request.FormValue("driver_name")
+	offset, _ := strconv.Atoi(request.FormValue("offset"))
+	limit, _ := strconv.Atoi(request.FormValue("limit"))
+	inspectorID, _ := strconv.Atoi(params.ByName("inspectorID"))
+
+	if licensePlate == "" && vinNumber == "" && driverName == "" {
+		response.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if limit == 0 {
+		limit = offset + 10
+	}
+	res := &struct {
+		Success     bool   `json:"success"`
+		Message     string `json:"message"`
+		Inspections []*model.Inspection
+	}{
+		Success: false,
+		Message: "No Record Matches the search result ",
+	}
+	ctx := request.Context()
+	ctx = context.WithValue(ctx, "license_plate", licensePlate)
+	ctx = context.WithValue(ctx, "vin_number", vinNumber)
+	ctx = context.WithValue(ctx, "driver_name", driverName)
+	ctx = context.WithValue(ctx, "offset", uint(offset))
+	ctx = context.WithValue(ctx, "limit", uint(limit))
+	ctx = context.WithValue(ctx, "inspector_id", uint(inspectorID))
+
+	inspections, erra := h.InspectionSer.SearchInspection(ctx)
+	if erra != nil || inspections == nil {
+		res.Success = false
+		res.Message = "No Record Found!"
+		res.Inspections = inspections
+		response.WriteHeader(http.StatusNotFound)
+		response.Write(helper.MarshalThis(res))
+		return
+	}
+	res.Success = true
+	res.Message = fmt.Sprintf("Succesfuly found %d Inspections", len(inspections))
+	res.Inspections = inspections
+	response.Write(helper.MarshalThis(res))
 }

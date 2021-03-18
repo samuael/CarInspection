@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/pgxpool"
+	"github.com/jackc/pgx"
 	// "github.com/jackc/pgx"
 	"github.com/samuael/Project/CarInspection/pkg/constants/model"
 	"github.com/samuael/Project/CarInspection/pkg/constants/state"
@@ -581,4 +582,106 @@ func (insrepo *InspectionRepo) DoesThisVahicheWithLicensePlateExist(ctx context.
 		return false
 	}
 	return true
+}
+
+// SearchInspection (ctx context.Context) ([]*model.Inspection, error)
+func (insrepo *InspectionRepo) SearchInspection(ctx context.Context) ([]*model.Inspection, error) {
+	licensePlate := ctx.Value("license_plate").(string)
+	vinNumber := ctx.Value("vin_number").(string)
+	driverName := ctx.Value("driver_name").(string)
+	offset := ctx.Value("offset").(uint)
+	limit := ctx.Value("limit").(uint)
+	inspectorID := ctx.Value("inspector_id").(uint)
+	inspections := []*model.Inspection{}
+	var colmns pgx.Rows
+	var er error
+	if inspectorID > 0 {
+		colmns, er = insrepo.DB.Query(ctx, "SELECT * FROM inspections WHERE (license_plate ILIKE $1 OR vin_number ILIKE $2 OR drivername ILIKE $3) AND inspector_id=$6 OFFSET $4 LIMIT $5;",
+			licensePlate, vinNumber, driverName, offset, limit, inspectorID)
+	} else {
+		colmns, er = insrepo.DB.Query(ctx, "SELECT * FROM inspections WHERE license_plate ILIKE $1 OR vin_number ILIKE $2 OR drivername ILIKE $3 OFFSET $4 LIMIT $5;",
+			licensePlate, vinNumber, driverName, offset, limit)
+	}
+
+	if er != nil {
+		println("Error While Fetching ", er.Error())
+		return inspections, er
+	}
+	for colmns.Next() {
+		handbrake := 0
+		steeringSystem := 0
+		brakeSystem := 0
+		seatBelt := 0
+		doorAndWindow := 0
+		dashBoardLight := 0
+		windshield := 0
+		baggageDoorWindow := 0
+		gearBox := 0
+		shockAbsorber := 0
+		frontHighAndLowBeamLight := 0
+		rearLightAndBrakeLight := 0
+		wiperOperation := 0
+		carHorn := 0
+		sideMirror := 0
+		generalBodyCondition := 0
+		// fetch the Inspection From the database
+		inspection := &model.Inspection{}
+
+		if errs := colmns.Scan(
+			&(inspection.ID),
+			&(inspection.GarageID),
+			&(inspection.InspectorID),
+			&(inspection.Drivername),
+			&(inspection.VehicleModel),
+			&(inspection.VehicleYear),
+			&(inspection.VehicleMake),
+			&(inspection.VehicleColor),
+			&(inspection.LicensePlate),
+			&(inspection.FrontImage),
+			&(inspection.LeftSideImage),
+			&(inspection.RightSideImage),
+			&(inspection.BackImage),
+			&(inspection.SignatureImage),
+			&(inspection.VinNumber),
+			&handbrake,
+			&steeringSystem,
+			&brakeSystem,
+			&seatBelt,
+			&doorAndWindow,
+			&dashBoardLight,
+			&windshield,
+			&baggageDoorWindow,
+			&gearBox,
+			&shockAbsorber,
+			&frontHighAndLowBeamLight,
+			&rearLightAndBrakeLight,
+			&wiperOperation,
+			&carHorn,
+			&sideMirror,
+			&generalBodyCondition,
+			&(inspection.DriverPerformance),
+			&(inspection.Balancing),
+			&(inspection.Hazard),
+			&(inspection.SignalLightUsage),
+			&(inspection.Passed)); errs == nil {
+			inspection.HandBrake = insrepo.GetFunctionalityResultByID(ctx, handbrake)
+			inspection.SteeringSystem = insrepo.GetFunctionalityResultByID(ctx, steeringSystem)
+			inspection.BrakeSystem = insrepo.GetFunctionalityResultByID(ctx, brakeSystem)
+			inspection.SeatBelt = insrepo.GetFunctionalityResultByID(ctx, seatBelt)
+			inspection.DoorAndWindow = insrepo.GetFunctionalityResultByID(ctx, doorAndWindow)
+			inspection.DashBoardLight = insrepo.GetFunctionalityResultByID(ctx, dashBoardLight)
+			inspection.WindShield = insrepo.GetFunctionalityResultByID(ctx, windshield)
+			inspection.BaggageDoorWindow = insrepo.GetFunctionalityResultByID(ctx, baggageDoorWindow)
+			inspection.GearBox = insrepo.GetFunctionalityResultByID(ctx, gearBox)
+			inspection.ShockAbsorber = insrepo.GetFunctionalityResultByID(ctx, shockAbsorber)
+			inspection.FrontHighAndLowBeamLight = insrepo.GetFunctionalityResultByID(ctx, frontHighAndLowBeamLight)
+			inspection.RearLightAndBrakeLight = insrepo.GetFunctionalityResultByID(ctx, rearLightAndBrakeLight)
+			inspection.WiperOperation = insrepo.GetFunctionalityResultByID(ctx, wiperOperation)
+			inspection.CarHorn = insrepo.GetFunctionalityResultByID(ctx, carHorn)
+			inspection.SideMirrors = insrepo.GetFunctionalityResultByID(ctx, sideMirror)
+			inspection.GeneralBodyCondition = insrepo.GetFunctionalityResultByID(ctx, generalBodyCondition)
+			inspections = append(inspections, inspection)
+		}
+	}
+	return inspections, nil
 }

@@ -90,3 +90,25 @@ func (secretr *SecretaryRepository) ChangePassword(ctx context.Context) (bool, e
 	}
 	return true, nil
 }
+
+// GetSecretaryByID (ctx context.Context) (*model.Secretary, error)
+// context parameter secretary_id uint
+func (secretr *SecretaryRepository) GetSecretaryByID(ctx context.Context) (*model.Secretary, error) {
+	secretaryID := ctx.Value("secretary_id").(uint)
+	secretary := &model.Secretary{}
+	era := secretr.DB.QueryRow(ctx, " SELECT * FROM secretaries WHERE id=$1 ", secretaryID).Scan(&(secretary.ID), &(secretary.Email), &(secretary.Firstname), &(secretary.Middlename), &(secretary.Lastname), &(secretary.Password), &(secretary.GarageID), &(secretary.Createdby))
+	if era != nil {
+		return nil, era
+	}
+	return secretary, nil
+}
+
+// DeleteSecretaryByID (ctx context.Context) (  error)
+func (secretr *SecretaryRepository) DeleteSecretaryByID(ctx context.Context) error {
+	secretaryID := ctx.Value("secretary_id").(uint)
+	cmd, era := secretr.DB.Exec(ctx, " DELETE FROM secretaries WHERE id=$1 ", secretaryID)
+	if era != nil || cmd.RowsAffected() == 0 {
+		return errors.New("No Rows Deleted ")
+	}
+	return nil
+}

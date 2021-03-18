@@ -14,4 +14,5 @@ type IInspectionRepo interface {
 	DeleteInspection(ctx context.Context) (bool, error)
 	DoesThisVahicheWithLicensePlateExist(ctx context.Context) bool 
 	DoesThisVehicleWithVinNumberExists(ctx context.Context) bool
+	SearchInspection(ctx context.Context) ([]*model.Inspection , error )
 }

@@ -12,5 +12,7 @@ type IInspectorRepo interface {
 	InspectorByEmail(context.Context) (*model.Inspector, error)
 	ChangePassword(ctx context.Context) (bool, error)
 	GetInspectionsByInspectorID(ctx context.Context) ([]*model.Inspection, error)
-	GetInspectorID(ctx context.Context) (*model.Inspector, error)
+	GetInspectorByID(ctx context.Context) (*model.Inspector, error)
+	UpdateProfileImage(ctx context.Context) error 
+	DeleteInspectorByID(ctx context.Context) error 
 }

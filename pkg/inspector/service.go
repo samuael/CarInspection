@@ -12,7 +12,9 @@ type IInspectorService interface {
 	InspectorByEmail(context.Context) (*model.Inspector, error)
 	ChangePassword(ctx context.Context) (bool, error)
 	GetInspectionsByInspectorID(ctx context.Context) ([]*model.Inspection, error)
-	GetInspectorID(ctx context.Context) (*model.Inspector, error)
+	GetInspectorByID(ctx context.Context) (*model.Inspector, error)
+	UpdateProfileImage(ctx context.Context) error
+	DeleteInspectorByID(ctx context.Context) error
 }
 
 // InspectorService  ...
@@ -52,6 +54,16 @@ func (insorser InspectorService) GetInspectionsByInspectorID(ctx context.Context
 }
 
 // GetInspectoryID (ctx context.Context )  (*model.Inspection , error )
-func (insorser InspectorService) GetInspectorID(ctx context.Context) (*model.Inspector, error) {
-	return insorser.Repo.GetInspectorID(ctx)
+func (insorser InspectorService) GetInspectorByID(ctx context.Context) (*model.Inspector, error) {
+	return insorser.Repo.GetInspectorByID(ctx)
+}
+
+// UpdateProfileImage (ctx context.Context) error
+func (insorser *InspectorService) UpdateProfileImage(ctx context.Context) error {
+	return insorser.Repo.UpdateProfileImage(ctx)
+}
+
+// DeleteInspectorByID (ctx context.Context) error
+func (insorser *InspectorService) DeleteInspectorByID(ctx context.Context) error {
+	return insorser.Repo.DeleteInspectorByID(ctx)
 }

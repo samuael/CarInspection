@@ -15,6 +15,7 @@ type IInspectionService interface {
 	DeleteInspection(ctx context.Context) (bool, error)
 	DoesThisVahicheWithLicensePlateExist(ctx context.Context) bool
 	DoesThisVehicleWithVinNumberExists(ctx context.Context) bool
+	SearchInspection(ctx context.Context) ([]*model.Inspection, error)
 }
 
 // InspectionService ...
@@ -63,4 +64,9 @@ func (inser *InspectionService) DoesThisVahicheWithLicensePlateExist(ctx context
 // DoesThisVehicleWithVinNumberExists  ...
 func (inser *InspectionService) DoesThisVehicleWithVinNumberExists(ctx context.Context) bool {
 	return inser.Repo.DoesThisVehicleWithVinNumberExists(ctx)
+}
+
+// SearchInspection (ctx , context.Context) ([]*model.Inspection , error )
+func (inser *InspectionService) SearchInspection(ctx context.Context) ([]*model.Inspection, error) {
+	return inser.Repo.SearchInspection(ctx)
 }
